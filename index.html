@@ -2,408 +2,420 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#0b0d12" />
-<title>나 뭐라고 보낼까? (WsIr) — Functional Engine v5.1</title>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>나 뭐라고 보낼까? (WsIr) — AI 커뮤니케이션 코-파일럿</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #0b0d12;
-    --bg-soft: #11141b;
-    --bg-card: #161a23;
-    --bg-elev: #1c2030;
-    --line: #232938;
-    --line-soft: #1c2030;
+    --bg-soft: #12151e;
+    --bg-card: #171b26;
+    --bg-elev: #1e2333;
+    --line: #262c3d;
+    --line-soft: #1c2130;
     --text: #e8ecf4;
-    --text-dim: #a3acc0;
-    --text-mute: #6f788d;
+    --text-dim: #9ea8bd;
+    --text-mute: #687289;
     --brand: #ff7a59;
     --brand-2: #ffb86b;
     --accent: #7c9eff;
-    --accent-2: #5ce4d0;
-    --good: #4ade80;
-    --warn: #facc15;
-    --bad: #ff6b6b;
+    --accent-2: #4ee0cb;
+    --good: #34d399;
+    --warn: #fbbf24;
+    --bad: #f87171;
     --wow: #fbbf24;
     --grad: linear-gradient(135deg, #ff7a59 0%, #ffb86b 50%, #ffd28a 100%);
-    --grad-cool: linear-gradient(135deg, #7c9eff 0%, #5ce4d0 100%);
+    --grad-cool: linear-gradient(135deg, #7c9eff 0%, #4ee0cb 100%);
     --grad-wow: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #ea580c 100%);
+    --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body {
-    background: var(--bg); color: var(--text);
-    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-    line-height: 1.5; -webkit-font-smoothing: antialiased;
+    background: var(--bg); color: var(--text); font-family: var(--font-sans);
+    line-height: 1.5; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh; overflow-x: hidden;
   }
   body {
     background:
-      radial-gradient(ellipse at 80% -10%, rgba(251,191,36,0.10), transparent 50%),
-      radial-gradient(ellipse at 10% 30%, rgba(255,122,89,0.08), transparent 50%),
+      radial-gradient(ellipse at 85% -10%, rgba(251,191,36,0.12), transparent 50%),
+      radial-gradient(ellipse at 15% 35%, rgba(255,122,89,0.09), transparent 50%),
       var(--bg);
-    min-height: 100vh;
   }
-  .app {
-    max-width: 480px; margin: 0 auto;
-    min-height: 100vh; position: relative;
-    padding-bottom: 90px;
+  .app-container {
+    max-width: 500px; margin: 0 auto; min-height: 100vh; position: relative;
+    padding-bottom: 96px; display: flex; flex-direction: column;
   }
   @media (min-width: 800px) {
-    .app { margin-top: 24px; margin-bottom: 24px; min-height: calc(100vh - 48px); border-radius: 32px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+    .app-container {
+      margin-top: 24px; margin-bottom: 24px; min-height: calc(100vh - 48px);
+      border-radius: 32px; overflow: hidden; border: 1px solid var(--line);
+      box-shadow: 0 24px 70px rgba(0,0,0,0.6);
+    }
   }
+
+  /* Header */
   .header {
-    position: sticky; top: 0; z-index: 50;
-    backdrop-filter: blur(20px);
-    background: rgba(11,13,18,0.88);
-    border-bottom: 1px solid var(--line-soft);
-    padding: 14px 18px;
-    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50; backdrop-filter: blur(20px);
+    background: rgba(11,13,18,0.92); border-bottom: 1px solid var(--line-soft);
+    padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;
   }
-  .header .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 15px; }
+  .header .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 15.5px; }
   .header .brand .dot {
-    width: 28px; height: 28px; border-radius: 8px;
-    background: var(--grad);
-    display: grid; place-items: center;
-    color: #1a1206; font-weight: 900; font-size: 14px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--grad);
+    display: grid; place-items: center; color: #1a1206; font-weight: 900; font-size: 14px;
+    box-shadow: 0 4px 14px rgba(255,122,89,0.3);
   }
-  .v-tag {
-    background: linear-gradient(135deg, rgba(251,191,36,0.15), rgba(245,158,11,0.10));
-    color: var(--wow);
+  .header-actions { display: flex; align-items: center; gap: 8px; }
+  .badge-mode {
     font-size: 10.5px; font-weight: 700; padding: 4px 8px; border-radius: 6px;
-    border: 1px solid rgba(251,191,36,0.3);
-    letter-spacing: 0.04em;
+    letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer;
   }
+  .badge-mode.real { background: rgba(78,224,203,0.15); color: var(--accent-2); border: 1px solid rgba(78,224,203,0.3); }
+  .badge-mode.demo { background: rgba(251,191,36,0.15); color: var(--wow); border: 1px solid rgba(251,191,36,0.3); }
+
   .icon-btn {
-    width: 34px; height: 34px; border-radius: 10px;
-    background: var(--bg-card); border: 1px solid var(--line);
-    display: grid; place-items: center;
+    width: 34px; height: 34px; border-radius: 10px; background: var(--bg-card);
+    border: 1px solid var(--line); display: grid; place-items: center;
     color: var(--text-dim); font-size: 14px; cursor: pointer; transition: 0.2s;
   }
-  .icon-btn:hover { border-color: var(--brand); color: var(--text); }
+  .icon-btn:hover { border-color: var(--brand); color: var(--text); transform: scale(1.05); }
 
-  /* Mode switch */
+  /* Mode Switch Tabs */
   .mode-switch {
     display: flex; background: var(--bg-card); border: 1px solid var(--line);
-    border-radius: 12px; padding: 4px; margin: 16px 18px 8px; gap: 4px;
+    border-radius: 14px; padding: 4px; margin: 16px 18px 8px; gap: 4px;
   }
   .mode-tab {
-    flex: 1; padding: 8px 12px; border-radius: 8px; text-align: center;
+    flex: 1; padding: 9px 12px; border-radius: 10px; text-align: center;
     font-size: 13px; font-weight: 600; color: var(--text-dim); cursor: pointer; transition: 0.2s;
   }
-  .mode-tab.active { background: var(--bg-elev); color: var(--text); font-weight: 700; border: 1px solid var(--line-soft); }
+  .mode-tab.active { background: var(--bg-elev); color: var(--text); font-weight: 700; border: 1px solid var(--line); }
 
-  /* Forms & Custom Input */
-  .custom-box {
-    background: var(--bg-card); border: 1px solid var(--line);
-    border-radius: 16px; padding: 18px; margin: 12px 18px;
+  /* Cards & Forms */
+  .card {
+    background: var(--bg-card); border: 1px solid var(--line); border-radius: 18px;
+    padding: 18px; margin: 10px 18px; position: relative;
   }
   .form-group { margin-bottom: 14px; }
+  .form-group:last-child { margin-bottom: 0; }
   .form-group label {
     font-size: 12px; color: var(--text-dim); font-weight: 700;
-    display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px;
   }
   .form-group select, .form-group textarea, .form-group input {
-    width: 100%; padding: 12px 14px;
-    background: var(--bg-elev); border: 1px solid var(--line);
-    border-radius: 10px; color: var(--text); font-family: inherit; font-size: 13.5px;
-    outline: none; transition: 0.2s;
+    width: 100%; padding: 12px 14px; background: var(--bg-elev);
+    border: 1px solid var(--line); border-radius: 12px; color: var(--text);
+    font-family: inherit; font-size: 13.5px; outline: none; transition: 0.2s;
   }
-  .form-group select:focus, .form-group textarea:focus, .form-group input:focus { border-color: var(--brand); }
-  .form-group textarea { min-height: 90px; resize: vertical; line-height: 1.5; }
+  .form-group select:focus, .form-group textarea:focus, .form-group input:focus {
+    border-color: var(--brand); box-shadow: 0 0 0 3px rgba(255,122,89,0.15);
+  }
+  .form-group textarea { min-height: 95px; resize: vertical; line-height: 1.55; }
 
-  /* Setup */
-  .setup-screen { padding: 40px 20px; display: flex; flex-direction: column; justify-content: center; }
-  .setup-hero { text-align: center; margin-bottom: 24px; }
-  .setup-hero .ico {
-    width: 64px; height: 64px; border-radius: 20px;
-    background: var(--grad);
-    display: inline-grid; place-items: center;
-    color: #1a1206; font-weight: 900; font-size: 28px;
-    margin-bottom: 16px; box-shadow: 0 12px 30px rgba(255,122,89,0.3);
+  /* Quick Actions in Inputs */
+  .input-action-btn {
+    background: none; border: none; color: var(--brand); font-size: 11px;
+    font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;
   }
-  .setup-hero h2 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
-  .setup-hero p { color: var(--text-dim); font-size: 13.5px; max-width: 320px; margin: 0 auto; line-height: 1.6; }
-  .security-badge {
-    background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.25);
-    border-radius: 12px; padding: 12px 14px; margin-bottom: 16px;
-    font-size: 12px; color: var(--text-dim); line-height: 1.5; display: flex; align-items: center; gap: 10px;
-  }
-  .security-badge .ico {
-    width: 28px; height: 28px; border-radius: 8px;
-    background: rgba(74,222,128,0.15); color: var(--good);
-    display: grid; place-items: center; font-size: 14px; flex-shrink: 0;
-  }
+  .input-action-btn:hover { text-decoration: underline; }
 
   /* Buttons */
   .cta {
     width: 100%; padding: 15px; background: var(--grad); color: #1a1206;
-    border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer;
+    border: none; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer;
     box-shadow: 0 8px 24px rgba(255,122,89,0.25); display: flex; align-items: center; justify-content: center; gap: 8px;
     transition: 0.2s;
   }
-  .cta:hover { transform: translateY(-1px); }
+  .cta:hover { transform: translateY(-1.5px); box-shadow: 0 12px 28px rgba(255,122,89,0.35); }
+  .cta:active { transform: translateY(0); }
   .cta.wow { background: var(--grad-wow); box-shadow: 0 8px 24px rgba(251,191,36,0.3); }
-  .cta.secondary { background: var(--bg-card); color: var(--text); border: 1px solid var(--line); box-shadow: none; }
-  .cta.secondary:hover { border-color: var(--brand); }
-  .cta:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .cta.wow:hover { box-shadow: 0 12px 28px rgba(251,191,36,0.4); }
+  .cta.secondary {
+    background: var(--bg-card); color: var(--text); border: 1px solid var(--line);
+    box-shadow: none; font-weight: 600;
+  }
+  .cta.secondary:hover { border-color: var(--brand); background: var(--bg-elev); }
+  .cta:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
-  /* Scenario list */
-  .scenario-list { display: flex; flex-direction: column; gap: 8px; padding: 0 18px 12px; }
+  /* Scenarios Grid */
+  .scenario-list { display: flex; flex-direction: column; gap: 9px; padding: 0 18px 12px; }
   .scenario-item {
-    background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px; padding: 14px;
-    cursor: pointer; transition: 0.15s; display: flex; align-items: center; gap: 12px;
+    background: var(--bg-card); border: 1px solid var(--line); border-radius: 16px; padding: 14px;
+    cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 12px;
   }
-  .scenario-item:hover { border-color: var(--brand); transform: translateX(2px); }
+  .scenario-item:hover { border-color: var(--brand); transform: translateX(3px); background: var(--bg-elev); }
   .scenario-item .ico {
-    width: 38px; height: 38px; border-radius: 10px; background: var(--bg-elev);
-    display: grid; place-items: center; font-size: 18px; flex-shrink: 0;
+    width: 42px; height: 42px; border-radius: 12px; background: var(--bg-elev);
+    display: grid; place-items: center; font-size: 20px; flex-shrink: 0;
   }
-  .scenario-item .t { font-size: 13.5px; font-weight: 700; }
+  .scenario-item .t { font-size: 14px; font-weight: 700; }
   .scenario-item .d { font-size: 11.5px; color: var(--text-mute); margin-top: 2px; }
-  .scenario-item .arr { color: var(--text-mute); margin-left: auto; }
+  .scenario-item .arr { color: var(--text-mute); margin-left: auto; font-size: 16px; font-weight: 700; }
 
   /* Mock Messenger */
   .phone-wrap { padding: 12px 18px; }
   .phone {
-    background: #fff; border-radius: 20px; border: 1px solid var(--line);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.3); overflow: hidden; color: #1a1a1a;
+    background: #ffffff; border-radius: 22px; border: 1px solid var(--line);
+    box-shadow: 0 16px 36px rgba(0,0,0,0.35); overflow: hidden; color: #1a1a1a;
   }
-  .msg-header { padding: 12px 16px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px; }
-  .msg-avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: white; font-weight: 700; font-size: 13px; }
+  .msg-header {
+    padding: 13px 16px; border-bottom: 1px solid #ebebeb; display: flex;
+    align-items: center; gap: 10px; background: #fafafa;
+  }
+  .msg-avatar {
+    width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+    color: white; font-weight: 800; font-size: 13.5px;
+  }
   .msg-name { font-size: 14px; font-weight: 700; }
-  .conversation { padding: 14px 12px; max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; background: #f5f6f8; }
-  .chat-row { display: flex; gap: 6px; }
+  .conversation {
+    padding: 16px 14px; max-height: 260px; overflow-y: auto; display: flex;
+    flex-direction: column; gap: 8px; background: #f4f5f7;
+  }
+  .chat-row { display: flex; gap: 8px; }
   .chat-row.me { justify-content: flex-end; }
-  .bubble { padding: 9px 12px; border-radius: 14px; font-size: 13.5px; max-width: 80%; line-height: 1.45; word-break: break-word; }
-  .chat-row.me .bubble { background: #ffeb33; border-bottom-right-radius: 4px; }
-  .chat-row.other .bubble { background: white; border-bottom-left-radius: 4px; border: 1px solid #e5e7eb; }
-  .bubble.highlighted { border: 2px solid var(--brand); box-shadow: 0 0 0 3px rgba(255,122,89,0.25); font-weight: 600; }
+  .bubble {
+    padding: 10px 14px; border-radius: 16px; font-size: 13.5px; max-width: 82%;
+    line-height: 1.5; word-break: break-word;
+  }
+  .chat-row.me .bubble { background: #ffeb33; border-bottom-right-radius: 4px; color: #111; font-weight: 500; }
+  .chat-row.other .bubble { background: white; border-bottom-left-radius: 4px; border: 1px solid #e2e4e8; color: #111; }
+  .bubble.highlighted {
+    border: 2px solid var(--brand); box-shadow: 0 0 0 3px rgba(255,122,89,0.25);
+    font-weight: 700; background: #fffbe6;
+  }
 
-  /* Cost tracker */
+  /* Status Tracker */
   .cost-tracker {
-    background: var(--bg-card); border: 1px solid var(--line); border-radius: 12px;
+    background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px;
     padding: 10px 14px; margin: 12px 18px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
-    font-family: 'JetBrains Mono', monospace; text-align: center;
+    font-family: var(--font-mono); text-align: center;
   }
   .cost-item .v { font-size: 15px; font-weight: 800; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
   .cost-item .l { font-size: 9.5px; color: var(--text-mute); margin-top: 2px; text-transform: uppercase; }
 
-  /* Analysis */
-  .analysis { background: var(--bg-card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin: 14px 18px; }
+  /* Analysis Panel */
+  .analysis { background: var(--bg-card); border: 1px solid var(--line); border-radius: 18px; padding: 18px; margin: 14px 18px; }
   .analysis .head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-  .analysis .head .ico { width: 28px; height: 28px; border-radius: 8px; background: var(--grad-cool); display: grid; place-items: center; font-weight: 900; font-size: 12px; color: #0b1730; }
-  .analysis-row { display: grid; grid-template-columns: 75px 1fr; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--line-soft); font-size: 12.5px; }
+  .analysis .head .ico {
+    width: 30px; height: 30px; border-radius: 9px; background: var(--grad-cool);
+    display: grid; place-items: center; font-weight: 900; font-size: 12px; color: #0b1730;
+  }
+  .analysis-row {
+    display: grid; grid-template-columns: 80px 1fr; gap: 10px; padding: 8px 0;
+    border-bottom: 1px dashed var(--line-soft); font-size: 12.8px;
+  }
   .analysis-row:last-child { border-bottom: none; }
   .analysis-row .label { color: var(--text-mute); font-weight: 700; font-size: 11px; }
 
-  /* Suggestions */
+  /* Suggestion Cards */
   .suggestion-section { margin: 14px 18px; }
   .suggestion-card {
-    background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px;
-    padding: 16px; margin-bottom: 10px; cursor: pointer; transition: 0.15s; position: relative;
+    background: var(--bg-card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 16px; margin-bottom: 12px; cursor: pointer; transition: 0.2s; position: relative;
   }
-  .suggestion-card:hover { border-color: var(--brand); transform: translateY(-1px); }
+  .suggestion-card:hover { border-color: var(--brand); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
   .suggestion-card.wow {
-    border-color: rgba(251,191,36,0.45);
-    background: linear-gradient(135deg, rgba(251,191,36,0.06) 0%, rgba(245,158,11,0.03) 100%);
+    border-color: rgba(251,191,36,0.5);
+    background: linear-gradient(135deg, rgba(251,191,36,0.07) 0%, rgba(245,158,11,0.03) 100%);
   }
-  .suggestion-card .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .suggestion-card .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
   .suggestion-card .meta { display: flex; align-items: center; gap: 6px; }
-  .tier-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+  .tier-badge { font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
   .tier-badge.basic { background: var(--bg-elev); color: var(--text-dim); }
-  .tier-badge.thoughtful { background: rgba(124,158,255,0.15); color: var(--accent); }
+  .tier-badge.thoughtful { background: rgba(124,158,255,0.18); color: var(--accent); }
   .tier-badge.wow { background: var(--grad-wow); color: #1a1206; font-weight: 900; }
-  .model-tag { font-size: 9.5px; padding: 2px 6px; border-radius: 4px; background: rgba(92,228,208,0.12); color: var(--accent-2); font-family: 'JetBrains Mono', monospace; font-weight: 600; }
-  .model-tag.premium { background: rgba(251,191,36,0.15); color: var(--wow); }
-  .suggestion-card .text { font-size: 14px; line-height: 1.55; color: var(--text); word-break: keep-all; }
+  .model-tag {
+    font-size: 9.5px; padding: 2px 6px; border-radius: 4px;
+    background: rgba(78,224,203,0.14); color: var(--accent-2); font-family: var(--font-mono); font-weight: 600;
+  }
+  .model-tag.premium { background: rgba(251,191,36,0.18); color: var(--wow); }
+  .suggestion-card .text { font-size: 14.5px; line-height: 1.6; color: var(--text); word-break: keep-all; }
   .suggestion-card .why { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line-soft); font-size: 11.5px; color: var(--text-mute); }
   .suggestion-card .why b { color: var(--text-dim); }
-  .suggestion-card .actions { display: flex; gap: 6px; margin-top: 10px; }
 
   /* Modals */
   .modal-bg {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+    position: fixed; inset: 0; background: rgba(0,0,0,0.78); backdrop-filter: blur(10px);
     z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px;
   }
   .modal-bg.show { display: flex; }
-  .modal { background: var(--bg-card); border: 1px solid var(--line); border-radius: 20px; padding: 20px; max-width: 400px; width: 100%; max-height: 85vh; overflow-y: auto; }
-  .diff-section { background: var(--bg-elev); border-radius: 10px; padding: 10px 12px; margin-top: 10px; font-size: 12px; line-height: 1.6; }
-  .diff-add { background: rgba(74,222,128,0.15); color: var(--good); padding: 1px 4px; border-radius: 3px; }
-  .diff-remove { background: rgba(255,107,107,0.15); color: var(--bad); padding: 1px 4px; border-radius: 3px; text-decoration: line-through; }
+  .modal {
+    background: var(--bg-card); border: 1px solid var(--line); border-radius: 22px;
+    padding: 22px; max-width: 420px; width: 100%; max-height: 85vh; overflow-y: auto;
+  }
+  .diff-section {
+    background: var(--bg-elev); border-radius: 12px; padding: 12px; margin-top: 12px;
+    font-size: 12px; line-height: 1.65;
+  }
+  .diff-add { background: rgba(52,211,153,0.18); color: var(--good); padding: 1px 5px; border-radius: 4px; font-weight: 600; }
+  .diff-remove { background: rgba(248,113,113,0.18); color: var(--bad); padding: 1px 5px; border-radius: 4px; text-decoration: line-through; }
 
-  /* Profile */
+  /* Profile Grid */
   .profile-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 18px 16px; }
-  .profile-box { background: var(--bg-card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; text-align: center; }
+  .profile-box { background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; text-align: center; }
   .profile-box .v { font-size: 20px; font-weight: 800; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .profile-box .l { font-size: 10px; color: var(--text-mute); margin-top: 2px; }
-  .relation-card { background: var(--bg-card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin: 0 18px 8px; }
-  .phrase { display: inline-block; padding: 3px 8px; border-radius: 100px; background: rgba(74,222,128,0.10); color: var(--good); font-size: 11px; font-weight: 600; margin: 2px; }
+  .profile-box .l { font-size: 10.5px; color: var(--text-mute); margin-top: 2px; }
+  .relation-card { background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin: 0 18px 8px; }
+  .phrase { display: inline-block; padding: 3px 8px; border-radius: 100px; background: rgba(52,211,153,0.12); color: var(--good); font-size: 11px; font-weight: 600; margin: 2px; }
 
-  /* Navigation */
+  /* Bottom Navigation */
   .bottom-nav {
     position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-    width: 100%; max-width: 480px; background: rgba(11,13,18,0.92); backdrop-filter: blur(20px);
-    border-top: 1px solid var(--line); display: flex; padding: 8px 8px 18px; z-index: 50;
+    width: 100%; max-width: 500px; background: rgba(11,13,18,0.94); backdrop-filter: blur(20px);
+    border-top: 1px solid var(--line); display: flex; padding: 8px 8px calc(env(safe-area-inset-bottom, 12px) + 8px); z-index: 50;
   }
   @media (min-width: 800px) {
     .bottom-nav { position: sticky; bottom: 0; max-width: none; width: 100%; transform: none; left: auto; border-radius: 0 0 32px 32px; }
   }
-  .nav-btn { flex: 1; padding: 8px 0; background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-mute); font-size: 11px; font-weight: 600; cursor: pointer; }
-  .nav-btn.active { color: var(--brand); }
-
-  .toast {
-    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
-    background: #fff; color: #000; padding: 10px 18px; border-radius: 100px;
-    font-size: 13px; font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,0.3); z-index: 300;
+  .nav-btn {
+    flex: 1; padding: 8px 0; background: none; border: none; display: flex; flex-direction: column;
+    align-items: center; gap: 4px; color: var(--text-mute); font-size: 11px; font-weight: 600; cursor: pointer; transition: 0.2s;
   }
+  .nav-btn.active { color: var(--brand); font-weight: 700; }
+
+  /* Toast Notification */
+  .toast {
+    position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%);
+    background: #ffffff; color: #0b0d12; padding: 10px 20px; border-radius: 100px;
+    font-size: 13px; font-weight: 700; box-shadow: 0 10px 30px rgba(0,0,0,0.4); z-index: 300;
+    display: flex; align-items: center; gap: 8px; pointer-events: none;
+    animation: toastPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  @keyframes toastPop { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
   .screen { display: none; }
   .screen.active { display: block; }
 </style>
 </head>
 <body>
 
-<div class="app">
+<div class="app-container">
 
   <!-- Header -->
-  <div class="header">
+  <header class="header">
     <div class="brand">
       <div class="dot">나</div>
       <span>나 뭐라고 보낼까?</span>
     </div>
-    <div style="display:flex; align-items:center; gap: 8px;">
-      <span class="v-tag">v5.1 FUNCTIONAL</span>
+    <div class="header-actions">
+      <span class="badge-mode demo" id="mode-indicator" onclick="toggleEngineMode()">⚡ 체험 모드</span>
       <button class="icon-btn" onclick="switchTab('profile')" title="학습 프로필">🧠</button>
+      <button class="icon-btn" onclick="openKeyModal()" title="API 키 설정">🔑</button>
     </div>
-  </div>
+  </header>
 
-  <!-- Screen: SETUP -->
-  <div id="screen-setup" class="screen">
-    <div class="setup-screen">
-      <div class="setup-hero">
-        <div class="ico">나</div>
-        <h2>나 뭐라고 보낼까?</h2>
-        <p>복잡한 한국어 메신저 답장, 1초 안에 4개 후보 + ⚡ Wow Point 1개</p>
-      </div>
-      <div class="security-badge">
-        <div class="ico">🔒</div>
-        <div><b>Zero-Knowledge BYOK</b><br>API Key는 오직 브라우저 로컬에만 저장되며 외부 서버로 전송되지 않습니다.</div>
-      </div>
-      <div class="custom-box">
-        <div class="form-group">
-          <label>🔑 OpenAI API Key</label>
-          <input type="password" id="api-key-input" placeholder="sk-proj-..." autocomplete="off" />
-          <p style="font-size: 11px; color: var(--text-mute); margin-top: 6px;">
-            mini(80%) + 4o(20%) 멀티모델 라우팅으로 세션당 약 ₩11 내외로 동작합니다.
-          </p>
-        </div>
-        <button class="cta" onclick="saveKey()">시작하기 🚀</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Screen: MAIN -->
-  <div id="screen-main" class="screen">
+  <!-- SCREEN: MAIN (Chat & Scenarios) -->
+  <main id="screen-main" class="screen active">
+    <!-- Mode Switcher -->
     <div class="mode-switch">
       <div class="mode-tab active" id="tab-custom" onclick="setMode('custom')">✍️ 자유 대화 입력</div>
-      <div class="mode-tab" id="tab-preset" onclick="setMode('preset')">💬 5대 시나리오</div>
+      <div class="mode-tab" id="tab-preset" onclick="setMode('preset')">💬 5대 시나리오 테스트</div>
     </div>
 
     <!-- Mode: Custom Input -->
-    <div id="mode-custom-view">
-      <div class="custom-box">
+    <section id="mode-custom-view">
+      <div class="card">
         <div class="form-group">
-          <label>👥 상대방과의 관계 (11대 카테고리)</label>
+          <label>👥 상대방과의 관계 (11대 화용론 카테고리)</label>
           <select id="custom-relation">
-            <option value="boss">👔 직장 상사 (팀장님, 과장님 등)</option>
-            <option value="client">💼 클라이언트 / 고객사</option>
-            <option value="senior">🎓 직장/학교 선배</option>
-            <option value="colleague">🤝 직장 동료 (동기)</option>
-            <option value="junior">🌱 직장/학교 후배</option>
-            <option value="professor">🧑‍🏫 교수님</option>
-            <option value="school">🎒 학교 친구</option>
-            <option value="romantic">💕 연인 / 썸</option>
-            <option value="parent">👨‍👩‍👧 부모님</option>
-            <option value="sibling">👫 형제자매</option>
-            <option value="friend" selected>☕ 친한 친구</option>
+            <option value="boss">👔 직장 상사 (팀장님, 부장님) — 결론 우선, 합쇼체</option>
+            <option value="client">💼 클라이언트 / 고객사 — 비즈니스 격식, 완충어</option>
+            <option value="senior">🎓 직장/학교 선배 — 정중하고 부드러운 존댓말</option>
+            <option value="colleague">🤝 직장 동료 (동기) — 상호 존중 해요체</option>
+            <option value="junior">🌱 직장/학교 후배 — 배려와 심리적 안정감</option>
+            <option value="professor">🧑‍🏫 교수님 — 최고 수준 격식 및 명확성</option>
+            <option value="school">🎒 학교 친구 — 편안하고 공감하는 톤</option>
+            <option value="romantic">💕 연인 / 썸 — 감정 교감 및 뉘앙스 포착</option>
+            <option value="parent">👨‍👩‍👧 부모님 — 따뜻한 안부 및 감사 표현</option>
+            <option value="sibling">👫 형제자매 — 간결하고 실용적인 캐주얼</option>
+            <option value="friend" selected>☕ 친한 친구 — 메신저 코드(ㅋㅋ, ㅠㅠ)</option>
           </select>
         </div>
 
         <div class="form-group">
           <label>
-            <span>📩 상대방의 마지막 메시지</span>
-            <button onclick="pasteClipboard('custom-last-msg')" style="background:none;border:none;color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;">📋 붙여넣기</button>
+            <span>📩 상대방의 최근 메시지 (맥락)</span>
+            <button class="input-action-btn" onclick="pasteClipboard('custom-last-msg')">📋 클립보드 붙여넣기</button>
           </label>
-          <textarea id="custom-last-msg" placeholder="예: '주말에 시간 돼?', '이거 언제까지 가능해?', 'ㅋㅋ 괜찮아'"></textarea>
+          <textarea id="custom-last-msg" placeholder="상대방이 보낸 메시지를 붙여넣으세요. (예: '이거 언제까지 가능해?', '주말에 시간 돼?', 'ㅋㅋ 괜찮아')"></textarea>
         </div>
 
         <div class="form-group">
-          <label>💡 내가 전달하고 싶은 핵심 (선택)</label>
-          <input type="text" id="custom-my-intent" placeholder="예: 거절하되 다음 주 제안 / 긍정 수락 / 일정 조율" />
+          <label>💡 내가 전달하고 싶은 핵심/의도 (선택)</label>
+          <input type="text" id="custom-my-intent" placeholder="예: 일정 거절하되 대안 제시 / 긍정적 수락 / 마감 조율" />
         </div>
 
-        <button class="cta wow" id="custom-gen-btn" onclick="generateCustom()">
+        <button class="cta wow" id="custom-gen-btn" onclick="handleGenerateCustom()">
           <span>⚡</span> Multi-Model 답장 추천 요청
         </button>
+        <p style="font-size:11px; color:var(--text-mute); text-align:center; margin-top:8px;">
+          단축키: <b>Ctrl + Enter</b> 로 즉시 추천 생성
+        </p>
       </div>
-    </div>
+    </section>
 
     <!-- Mode: Preset Scenarios -->
-    <div id="mode-preset-view" style="display:none;">
+    <section id="mode-preset-view" style="display:none;">
       <div class="scenario-list">
         <div class="scenario-item" onclick="selectPreset('crush_weekend')">
           <div class="ico">💕</div>
-          <div><div class="t">연인 · 주말 약속</div><div class="d">"주말에 시간 돼?" — 모호한 질문</div></div>
+          <div><div class="t">연인 · 주말 약속</div><div class="d">"주말에 시간 돼?" — 모호한 질문 속 데이트 니즈</div></div>
           <div class="arr">›</div>
         </div>
         <div class="scenario-item" onclick="selectPreset('boss_deadline')">
           <div class="ico">👔</div>
-          <div><div class="t">상사 · 보고서 마감</div><div class="d">"이거 언제까지 가능해?" — 압박 질문</div></div>
+          <div><div class="t">상사 · 보고서 마감</div><div class="d">"이거 언제까지 가능해?" — 압박 속 주도권 확보</div></div>
           <div class="arr">›</div>
         </div>
         <div class="scenario-item" onclick="selectPreset('friend_subtext')">
           <div class="ico">🤝</div>
-          <div><div class="t">친구 · 서운한 화해</div><div class="d">"ㅋㅋ 괜찮아" — 서운함을 포장</div></div>
+          <div><div class="t">친구 · 서운한 화해</div><div class="d">"ㅋㅋ 괜찮아" — 서운함을 포장한 텍스트 해독</div></div>
           <div class="arr">›</div>
         </div>
         <div class="scenario-item" onclick="selectPreset('family_mom')">
           <div class="ico">👨‍👩‍👧</div>
-          <div><div class="t">가족 · 엄마 안부</div><div class="d">"잘 지내지? 전화해줘" — 외로움 신호</div></div>
+          <div><div class="t">가족 · 엄마 안부</div><div class="d">"잘 지내지? 전화해줘" — 외로움 신호에 따뜻한 응답</div></div>
           <div class="arr">›</div>
         </div>
         <div class="scenario-item" onclick="selectPreset('client_polite')">
           <div class="ico">💼</div>
-          <div><div class="t">클라이언트 · 미묘한 불만</div><div class="d">"확인해보겠습니다" — 회피/거절 신호</div></div>
+          <div><div class="t">클라이언트 · 미묘한 불만</div><div class="d">"확인해보겠습니다" — 완곡한 거절을 선제 방어</div></div>
           <div class="arr">›</div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Live Messenger Preview (when preset chosen) -->
-    <div id="preset-phone-wrap" class="phone-wrap" style="display:none;">
+    <!-- Preset Messenger View -->
+    <section id="preset-phone-wrap" class="phone-wrap" style="display:none;">
       <div class="phone">
         <div class="msg-header">
-          <div class="msg-avatar" id="p-avatar">팀</div>
-          <div><div class="msg-name" id="p-name">이름</div></div>
+          <div class="msg-avatar" id="p-avatar">지</div>
+          <div><div class="msg-name" id="p-name">지은</div></div>
         </div>
         <div class="conversation" id="p-conv"></div>
       </div>
-      <button class="cta wow" style="margin-top:12px;" onclick="generatePreset()">
+      <button class="cta wow" style="margin-top:14px;" onclick="handleGeneratePreset()">
         <span>⚡</span> 이 시나리오로 답변 요청
       </button>
-    </div>
+    </section>
 
-    <!-- Status & Costs -->
+    <!-- Metrics & Results -->
     <div id="cost-tracker" class="cost-tracker" style="display:none;"></div>
     <div id="analysis-section" style="display:none;"></div>
     <div id="suggestions-section" style="display:none;"></div>
-  </div>
+  </main>
 
-  <!-- Screen: PROFILE -->
-  <div id="screen-profile" class="screen">
+  <!-- SCREEN: PROFILE -->
+  <section id="screen-profile" class="screen">
     <div style="padding: 20px 18px 10px;">
       <h2 style="font-size:20px; font-weight:800; margin-bottom:4px;">🧠 나만의 학습 프로필</h2>
-      <p style="font-size:12px; color:var(--text-dim);">답장을 수정할 때마다 LCS diff 알고리즘을 통해 내 말투를 학습합니다.</p>
+      <p style="font-size:12px; color:var(--text-dim);">답장을 수정할 때마다 LCS diff 알고리즘을 통해 내 말투를 온디바이스로 학습합니다.</p>
     </div>
     <div class="profile-grid">
       <div class="profile-box"><div class="v" id="p-total-samples">0</div><div class="l">학습 횟수</div></div>
@@ -413,37 +425,56 @@
     <div id="profile-relations-list"></div>
 
     <div style="padding: 16px 18px; display:flex; flex-direction:column; gap:8px;">
-      <button class="cta secondary" onclick="exportProfile()">💾 프로필 데이터 백업 (JSON)</button>
-      <button class="cta secondary" onclick="document.getElementById('import-file').click()">📂 프로필 데이터 복원 (JSON)</button>
-      <input type="file" id="import-file" style="display:none;" onchange="importProfile(event)" />
-      <button class="cta secondary" style="color:var(--bad);" onclick="resetProfile()">🗑️ 학습 데이터 초기화</button>
-      <button class="cta secondary" style="color:var(--warn);" onclick="resetKey()">🔑 API 키 변경</button>
+      <button class="cta secondary" onclick="exportProfile()">💾 프로필 데이터 백업 (JSON 파일)</button>
+      <button class="cta secondary" onclick="document.getElementById('import-file').click()">📂 프로필 데이터 복원 (JSON 파일)</button>
+      <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importProfile(event)" />
+      <button class="cta secondary" style="color:var(--bad);" onclick="resetProfile()">🗑️ 맞춤 학습 데이터 초기화</button>
     </div>
-  </div>
+  </section>
 
-  <!-- Bottom Nav -->
-  <div class="bottom-nav">
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
     <button class="nav-btn active" id="btn-nav-main" onclick="switchTab('main')">
-      <span style="font-size:18px;">💬</span><span>메신저 답장</span>
+      <span style="font-size:18px;">💬</span><span>메신저 코-파일럿</span>
     </button>
     <button class="nav-btn" id="btn-nav-profile" onclick="switchTab('profile')">
       <span style="font-size:18px;">🧠</span><span>학습 프로필</span>
     </button>
-  </div>
+  </nav>
 
 </div>
 
-<!-- Edit Modal -->
+<!-- API Key Setup Modal -->
+<div class="modal-bg" id="key-modal">
+  <div class="modal">
+    <h3 style="font-size:17px; font-weight:800; margin-bottom:6px;">🔑 OpenAI API Key 설정</h3>
+    <p style="font-size:12.5px; color:var(--text-dim); margin-bottom:14px; line-height:1.5;">
+      <b>Zero-Knowledge BYOK</b>: 입력하신 키는 오직 브라우저 <code>localStorage</code>에만 보관되며, 어떤 서버로도 전송되지 않습니다.
+    </p>
+    <div class="form-group">
+      <input type="password" id="api-key-input" placeholder="sk-proj-..." autocomplete="off" />
+    </div>
+    <div style="font-size:11.5px; color:var(--text-mute); margin-bottom:14px;">
+      키를 등록하면 실제 <b>GPT-4o-mini</b> + <b>GPT-4o</b> 멀티모델 라우팅(세션당 ~₩11)으로 구동되며, 비워둘 경우 내장된 고품질 시뮬레이션 모드로 작동합니다.
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="cta secondary" style="flex:1;" onclick="closeKeyModal()">닫기</button>
+      <button class="cta" style="flex:1.5;" onclick="saveKey()">저장 및 적용 🚀</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit & Learn Modal -->
 <div class="modal-bg" id="edit-modal">
   <div class="modal">
-    <h3 style="font-size:16px; font-weight:800; margin-bottom:4px;">✏️ 답장 수정 및 재귀 학습</h3>
-    <p style="font-size:12px; color:var(--text-dim); margin-bottom:12px;">원하는 말투로 수정해 저장하면 다음 추천부터 반영됩니다.</p>
-    <textarea id="edit-textarea" style="width:100%; min-height:90px; padding:10px; background:var(--bg-elev); border:1px solid var(--line); border-radius:10px; color:var(--text); font-family:inherit;"></textarea>
+    <h3 style="font-size:16.5px; font-weight:800; margin-bottom:4px;">✏️ 답장 수정 및 재귀 학습</h3>
+    <p style="font-size:12px; color:var(--text-dim); margin-bottom:12px;">수정하여 저장하면 LCS diff 알고리즘을 통해 다음 답장 추천에 내 스타일이 반영됩니다.</p>
+    <textarea id="edit-textarea" style="width:100%; min-height:95px; padding:12px; background:var(--bg-elev); border:1px solid var(--line); border-radius:12px; color:var(--text); font-family:inherit; font-size:14px; outline:none;"></textarea>
     <div class="diff-section">
-      <div style="font-size:10px; color:var(--text-mute); font-weight:700; margin-bottom:4px;">DIFF 변경 감지</div>
+      <div style="font-size:10px; color:var(--text-mute); font-weight:700; margin-bottom:4px; text-transform:uppercase;">실시간 Diff 분석 감지</div>
       <div id="diff-output">수정 시 변경 사항이 표시됩니다.</div>
     </div>
-    <div style="display:flex; gap:8px; margin-top:14px;">
+    <div style="display:flex; gap:8px; margin-top:16px;">
       <button class="cta secondary" style="flex:1;" onclick="closeEditModal()">취소</button>
       <button class="cta" style="flex:1.5;" onclick="saveEditAndLearn()">저장하고 학습 🧠</button>
     </div>
@@ -451,11 +482,109 @@
 </div>
 
 <script>
-// Core State & Storage Keys
+// Storage Keys
 const KEY_STORAGE = 'wsir_openai_key';
 const PROFILE_KEY = 'wsir_profile_v5';
 const STATS_KEY = 'wsir_stats_v5';
-const CACHE_KEY = 'wsir_cache_v5';
+
+// Realistic High-Fidelity Mock Engine (For Demo Mode when no OpenAI Key is entered)
+const MOCK_DB = {
+  boss: {
+    intent: '마감 기한 압박 및 클라이언트 납기 위험 통제',
+    emotion: '업무 지연에 대한 초조함 및 팀장에 대한 부담감',
+    subtext: '지금 당장 클라이언트에 전달할 확정 시점이 필요하며, 일정이 늦어질 경우 내가 책임지기 싫음',
+    whatTheyWant: '정확한 마감 확답과 불안을 불식시킬 선제적 보고',
+    strategy: '결론 우선 보고 + 마감 시점 2단계 제시 + 주도적 우선순위 확인',
+    redFlags: ['"최대한 빨리 해보겠습니다"', '"좀 걸릴 것 같습니다"'],
+    candidates: [
+      { tier: 'basic', tone: '격식 (합쇼체)', text: '팀장님, A건 보고서 초안은 금일 18시까지 1차 공유해 드리겠습니다. 확인 부탁드립니다.', rationale: '가장 안전한 기한 제시' },
+      { tier: 'thoughtful', tone: '배려 톤', text: '클라이언트 대응에 고민 많으셨겠습니다. 금일 17시까지 핵심 요약본 먼저 전달드려 업무에 차질 없도록 하겠습니다.', rationale: '상사의 부담을 덜어주는 완충 보고' },
+      { tier: 'basic', tone: '간결 톤', text: '네 팀장님, 오늘 19시까지 최종 검토본 전달드리겠습니다.', rationale: '군더더기 없는 즉각 확답' }
+    ],
+    wow_point: {
+      tier: 'wow', tone: '전략',
+      text: '오늘 밤 11시까지 핵심 초안 먼저 넘겨드리고, 내일 오전 클라이언트 출근 전 피드백 반영해 최종본 올리겠습니다. 가장 급한 항목부터 말씀해 주시면 우선순위 두고 먼저 잡겠습니다.',
+      rationale: '단순 수동적 수락이 아닌 상사의 불안을 원천 차단하고 주도권을 쥐는 전략적 답변',
+      wow_detail: '상대방의 납기 스트레스를 안심시키면서, 내 작업 시간의 자율성을 확보하는 비즈니스 화법'
+    }
+  },
+  romantic: {
+    intent: '주말 데이트 타진 및 만남 제안',
+    emotion: '기대감 및 거절당할 것에 대한 약간의 방어기제',
+    subtext: '너랑 주말에 꼭 만나고 싶은데, 내가 먼저 너무 매달리는 것처럼 보이고 싶지는 않아',
+    whatTheyWant: '적극적인 긍정 화답과 구체적인 데이트 리드',
+    strategy: '즉각적인 호감 표현 + 상대 취향을 고려한 장소/메뉴 선제 제안',
+    redFlags: ['"주말에 뭐하는데?"', '"나 바쁜데 어디 가려고?"'],
+    candidates: [
+      { tier: 'basic', tone: '캐주얼', text: '좋지! 이번 주말에 맛있는 거 먹으러 가자 ㅋㅋ 뭐 먹고 싶은 거 있어?', rationale: '자연스러운 긍정 반응' },
+      { tier: 'thoughtful', tone: '다정 톤', text: '응 완전 시간 되지! 이번 주 회사 일 때문에 피곤했을 텐데 분위기 좋은 데 가서 힐링하자 ㅎㅎ', rationale: '상대의 일상 피로를 공감' },
+      { tier: 'basic', tone: '간결 톤', text: '응응 토요일 일요일 둘 다 괜찮아! 맛집 찾아볼게 ☺️', rationale: '빠르고 명확한 일정 오픈' }
+    ],
+    wow_point: {
+      tier: 'wow', tone: '전략',
+      text: '응 완전 좋아! 이번 주 내내 바빴을 텐데 맛있는 거 먹고 푹 쉬자. 장소는 내가 찾아볼게 — 저번에 네가 가보고 싶다던 성수 쪽 파스타 어때?',
+      rationale: '과거 대화를 기억하고 있음을 보여주는 강력한 관찰 신호 + 완벽한 리드',
+      wow_detail: '단순히 "어디 갈까?"라고 되묻는 대신, 상대방이 과거에 흘린 취향을 캐치해 먼저 제안함으로써 깊은 배려를 각인'
+    }
+  },
+  friend: {
+    intent: '약속 취소에 대한 미안함 표출 및 서운함 방어',
+    emotion: '약간의 섭섭함 및 어색해지고 싶지 않은 심리',
+    subtext: '솔직히 너랑 보고 싶었는데 못 보게 돼서 아쉬워. 하지만 쿨한 척하고 싶어',
+    whatTheyWant: '서운함을 털어버릴 수 있는 따뜻하고 유쾌한 공감과 다음 약속 확정',
+    strategy: '쿨한 척을 맞받아치지 않고, 상대의 아쉬움을 진심으로 달래며 다음 일정 픽스',
+    redFlags: ['"응 그래 다음 주에 보자"', '"ㅇㅇ"'],
+    candidates: [
+      { tier: 'basic', tone: '친근 톤', text: '에이 아쉽다 ㅋㅋ 야근 파이팅하고 담주 주말엔 무조건 내가 쏜다!', rationale: '부담 없는 친구 사이의 응원' },
+      { tier: 'thoughtful', tone: '따뜻 톤', text: '프로젝트 빡센데 무리하지 말고 몸 챙겨라 ㅠㅠ 담주에 맛있는 거 먹으면서 회포 풀자', rationale: '친구의 건강과 번아웃 배려' },
+      { tier: 'basic', tone: '간결 톤', text: '오케이 담주엔 진짜 시간 비워둬라 ㅋㅋ 주말 잘 쉬어!', rationale: '깔끔한 다음 약속 기약' }
+    ],
+    wow_point: {
+      tier: 'wow', tone: '전략',
+      text: '야 너 프로젝트 때문에 며칠째 밤샘 아니냐? 몸 상할까 봐 걱정이다. 이번 주는 푹 자고 다음 주에 내가 맛있는 거 사줄 테니까 체력 충전해 둬라 ㅋㅋ',
+      rationale: '약속 파토에 대한 원망을 0%로 만들고 감동을 주는 찐친 화법',
+      wow_detail: '서운함 대신 상대의 고단함을 1순위로 챙겨줌으로써 신뢰도를 극대화'
+    }
+  },
+  client: {
+    intent: '제안 검토에 대한 신중한 지연 또는 완곡한 거절 신호',
+    emotion: '결정을 서두르고 싶지 않은 부담감 및 리스크 회피',
+    subtext: '내부 협의가 더 필요하거나 확신이 서지 않음. 추가적인 압박은 거부감을 유발함',
+    whatTheyWant: '무리한 재촉 없는 편안한 검토 기간 및 핵심 판단 근거',
+    strategy: '검토 부담 완화 + 추가 질문 유도 + 명확한 회신 타임라인 제안',
+    redFlags: ['"언제까지 검토 가능한가요?"', '"빠른 회신 부탁드립니다"'],
+    candidates: [
+      { tier: 'basic', tone: '비즈니스 격식', text: '네 과장님, 편하신 일정에 천천히 검토 부탁드립니다. 추가 자료가 필요하시면 언제든 말씀해 주십시오.', rationale: '정중한 대기 안내' },
+      { tier: 'thoughtful', tone: '배려 톤', text: '바쁘신 와중에 검토해 주셔서 감사드립니다. 의사결정에 필요한 보완점이 있으시면 즉시 지원해 드리겠습니다.', rationale: '협조 의지 강조' },
+      { tier: 'basic', tone: '간결 톤', text: '확인 감사드립니다. 편하게 살펴보시고 회신 부탁드리겠습니다.', rationale: '부담 없는 클로징' }
+    ],
+    wow_point: {
+      tier: 'wow', tone: '전략',
+      text: '네 과장님, 내부 검토에 시간 소요되실 수 있으니 편하실 때 확인 부탁드립니다. 혹시 경영진 보고용 1장짜리 핵심 요약본이 필요하시면 미리 준비해 둘 수 있으니 언제든 말씀해 주십시오.',
+      rationale: '단순히 기다리는 것이 아니라 상대의 내부 보고 부담을 덜어주는 치밀한 파트너십 제안',
+      wow_detail: '클라이언트 실무자가 상사에게 보고할 때 겪는 고충을 선제 해결해 줌으로써 수주 성공률을 높이는 B2B 화용론'
+    }
+  },
+  parent: {
+    intent: '자녀의 안부 확인 및 목소리를 듣고 싶은 그리움',
+    emotion: '외로움, 걱정, 보고 싶은 마음',
+    subtext: '바쁜 너에게 방해가 될까 봐 길게 말은 못 하지만, 그냥 목소리 한 번 듣고 싶다',
+    whatTheyWant: '자신의 건강에 대한 안심과 다정한 전화 한 통',
+    strategy: '즉각적인 감사 표현 + 구체적인 통화 가능 시간 약속',
+    redFlags: ['"응 바빠 나중에 전화할게"', '"별일 없어"'],
+    candidates: [
+      { tier: 'basic', tone: '다정한 존댓말', text: '엄마 나 잘 지내고 있어! 엄마도 감기 조심해. 오늘 퇴근하고 전화할게 사랑해 ❤️', rationale: '자연스러운 안도감 제공' },
+      { tier: 'thoughtful', tone: '따뜻 톤', text: '엄마 메시지 보고 힘난다 ㅎㅎ 요즘 추운데 옷 따뜻하게 입고 계세요. 이따 저녁 먹고 바로 전화드릴게요!', rationale: '부모님의 일상 건강 염려' },
+      { tier: 'basic', tone: '간결 톤', text: '엄마 보고 싶네! 오늘 8시쯤 전화할 테니까 꼭 받아~', rationale: '시간 확정 통화 약속' }
+    ],
+    wow_point: {
+      tier: 'wow', tone: '전략',
+      text: '엄마 나도 요즘 엄마 생각 많이 났는데 먼저 연락 줘서 고마워요. 요즘 날씨 많이 추운데 무릎은 괜찮으셔? 오늘 밤 8시 반에 여유 있게 전화드릴게요 따뜻하게 입고 계세요!',
+      rationale: '부모님의 평소 건강 관심사를 짚어주고 약속 시간을 명확히 하여 온종일 기다리지 않게 배려',
+      wow_detail: '노년기 부모의 고독감을 덜어주고 자녀의 효심을 진심으로 전하는 가족 커뮤니케이션'
+    }
+  }
+};
 
 const PRESET_SCENARIOS = {
   crush_weekend: {
@@ -464,7 +593,7 @@ const PRESET_SCENARIOS = {
     conversation: [
       { side: 'me', text: '오늘 하루 어땠어?' },
       { side: 'other', text: '회사에서 좀 바빴어 너는?' },
-      { side: 'me', text: '나도 비슷! 근데 오늘 일찍 끝나서 좋아 ☺️' },
+      { side: 'me', text: '나도 비슷! 근데 오늘 일찍 끝나서 기분 좋아 ☺️' },
       { side: 'other', text: '주말에 시간 되면 같이 맛있는 거 먹으러 갈래? 근데 어디로 갈지는 잘 모르겠어 ㅋㅋ', highlighted: true }
     ]
   },
@@ -500,7 +629,7 @@ const PRESET_SCENARIOS = {
     relation: 'client', name: '김 과장님', avatar: '김', color: '#0ea5e9',
     lastMsg: '확인해보겠습니다',
     conversation: [
-      { side: 'me', text: '안녕하세요 과장님, 시안 검토 부탁드립니다.' },
+      { side: 'me', text: '안녕하세요 과장님, 디자인 시안 검토 부탁드립니다.' },
       { side: 'other', text: '네 잘 받았습니다' },
       { side: 'other', text: '확인해보겠습니다', highlighted: true }
     ]
@@ -511,6 +640,7 @@ const state = {
   currentRelation: 'friend',
   lastMsg: '',
   lastResult: null,
+  currentPresetId: 'crush_weekend',
   editingIdx: null,
   editingOriginal: '',
   totalCalls: 0,
@@ -519,7 +649,7 @@ const state = {
   cacheMisses: 0
 };
 
-// Profile & Memory Store
+// Profile & Recursive Memory Store
 const ProfileStore = {
   data: { overall: { samples: 0, formalityBias: 0 }, perRelation: {} },
   init() {
@@ -584,8 +714,8 @@ function computeDiff(orig, edit) {
   return { added: added.reverse(), removed: removed.reverse() };
 }
 function computeFormalityShift(orig, edit) {
-  const f = t => (t.match(/습니다|드립니다|바랍니다|하십시오/g) || []).length;
-  const c = t => (t.match(/해요|에요|드려요|ㅋㅋ|ㅎㅎ|ㅠ/g) || []).length;
+  const f = t => (t.match(/습니다|드립니다|바랍니다|하십시오|되겠습니까/g) || []).length;
+  const c = t => (t.match(/해요|에요|드려요|ㅋㅋ|ㅎㅎ|ㅠ|줘|가자/g) || []).length;
   return Math.max(-1, Math.min(1, ((f(edit) - f(orig)) - (c(edit) - c(orig))) / 3));
 }
 
@@ -606,7 +736,7 @@ async function callOpenAI(model, systemPrompt, userPrompt) {
   });
   if (!res.ok) {
     const err = await res.json().catch(()=>({}));
-    throw new Error(err.error?.message || `API Error ${res.status}`);
+    throw new Error(err.error?.message || `OpenAI API 오류 (${res.status})`);
   }
   const data = await res.json();
   state.totalCalls++;
@@ -618,7 +748,7 @@ async function callOpenAI(model, systemPrompt, userPrompt) {
   return { content: JSON.parse(data.choices[0].message.content), costKRW };
 }
 
-// Pipeline Generation
+// Master Pipeline Execution
 async function executePipeline(relation, lastMsg, contextText) {
   const cacheKey = `c_${relation}_${lastMsg.trim().slice(0,60)}`;
   const cached = localStorage.getItem(cacheKey);
@@ -632,22 +762,44 @@ async function executePipeline(relation, lastMsg, contextText) {
   }
 
   state.cacheMisses++;
+  const hasKey = !!localStorage.getItem(KEY_STORAGE);
+
+  if (!hasKey) {
+    // Demo Mode Simulation using Curated Engine Mock
+    toast('⚡ [체험 모드] 초고속 시뮬레이션 파이프라인 구동 중...');
+    await new Promise(r => setTimeout(r, 600));
+    const fallback = MOCK_DB[relation] || MOCK_DB['friend'];
+    const customResult = {
+      analysis: {
+        intent: fallback.intent,
+        emotion: fallback.emotion,
+        subtext: fallback.subtext,
+        whatTheyWant: fallback.whatTheyWant,
+        strategy: fallback.strategy,
+        redFlags: fallback.redFlags
+      },
+      candidates: [...fallback.candidates, fallback.wow_point]
+    };
+    renderResults(customResult, 0, false);
+    saveStats();
+    toast('✨ 답장 추천이 완료되었습니다! (체험 모드)');
+    return;
+  }
+
+  // Real LLM Pipeline (BYOK)
   toast('⚡ Multi-Model 파이프라인 분석 시작...');
   const promptCtx = ProfileStore.getPromptContext(relation);
 
-  // Layer 1: Intent Analysis (GPT-4o-mini)
-  const intentPrompt = `너는 고맥락 한국어 메신저 분석가다. [상대방 메시지 + 맥락]을 분석하여 다음 JSON으로 출력하라:
-{"intent": "상대의 진짜 의도 1줄", "emotion": "표정 이면의 감정", "subtext": "숨겨진 결핍/욕구", "whatTheyWant": "나에게 바라는 것", "strategy": "추천 대응 톤", "redFlags": ["피해야 할 표현 1~2개"]}`;
+  const intentPrompt = `너는 고맥락 한국어 메신저 분석가다. [상대방 메시지 + 맥락 + 관계]를 분석하여 다음 JSON으로만 출력하라:
+{"intent": "상대의 표면 의도 1줄", "emotion": "표정 이면의 실제 감정", "subtext": "숨겨진 결핍 또는 진짜 욕구", "whatTheyWant": "나에게 바라는 것", "strategy": "추천 대응 전략/톤", "redFlags": ["피해야 할 표현 1~2개"]}`;
   const intentRes = await callOpenAI('gpt-4o-mini', intentPrompt, `상대방 메시지: "${lastMsg}"\n맥락: ${contextText}\n관계: ${relation}`);
 
-  // Layer 2: 3 Drafts (GPT-4o-mini)
-  const draftPrompt = `너는 한국어 메신저 답장 생성기다. 1~2줄의 압축된 한국어 답장 3개를 JSON으로 생성하라.
+  const draftPrompt = `너는 한국어 메신저 답장 생성기다. 1~2줄의 압축된 한국어 메신저 답장 3개를 JSON으로 생성하라.
 각 후보는 격식(formal), 캐주얼(casual), 따뜻(warm) 톤으로 구성할 것.
 ${promptCtx}
 출력 형식: {"candidates": [{"tier":"basic|thoughtful", "tone":"격식|캐주얼|따뜻", "text":"답장 문구", "rationale":"이유 1줄"}]}`;
   const draftRes = await callOpenAI('gpt-4o-mini', draftPrompt, `상대방: "${lastMsg}"\n의도분석: ${JSON.stringify(intentRes.content)}\n관계: ${relation}`);
 
-  // Layer 3: ⚡ Wow Point (GPT-4o Premium)
   const wowPrompt = `너는 커뮤니케이션 전략 코치다. 상대의 숨은 결핍이나 불안을 먼저 해소하며 주도권을 갖는 "사용자가 미처 생각 못한 한 수 앞선 Wow Point 답장" 1개를 생성하라.
 1~2줄 압축 한국어 문장.
 ${promptCtx}
@@ -663,6 +815,7 @@ ${promptCtx}
   const totalCost = intentRes.costKRW + draftRes.costKRW + wowRes.costKRW;
   renderResults(combined, totalCost, false);
   saveStats();
+  toast('✨ 추천 답장이 생성되었습니다!');
 }
 
 function renderResults(res, cost, isCached) {
@@ -688,12 +841,15 @@ function renderResults(res, cost, isCached) {
     <div class="analysis">
       <div class="head">
         <div class="ico">AI</div>
-        <div><div style="font-size:13.5px;font-weight:700;">의도 및 서브텍스트 분석</div><div style="font-size:11px;color:var(--text-mute);">상대방의 숨겨진 욕구를 읽어냈습니다</div></div>
+        <div>
+          <div style="font-size:13.8px;font-weight:700;">의도 및 서브텍스트 분석</div>
+          <div style="font-size:11px;color:var(--text-mute);">상대방의 숨겨진 욕구를 읽어냈습니다</div>
+        </div>
       </div>
       <div class="analysis-row"><div class="label">표면 의도</div><div>${escapeHtml(a.intent)}</div></div>
-      <div class="analysis-row"><div class="label">서브텍스트</div><div style="color:var(--accent-2);font-weight:600;">"${escapeHtml(a.subtext)}"</div></div>
+      <div class="analysis-row"><div class="label">서브텍스트</div><div style="color:var(--accent-2);font-weight:700;">"${escapeHtml(a.subtext)}"</div></div>
       <div class="analysis-row"><div class="label">추천 전략</div><div>${escapeHtml(a.strategy)}</div></div>
-      ${a.redFlags && a.redFlags.length ? `<div class="analysis-row"><div class="label" style="color:var(--bad);">⚠️ 회피</div><div style="color:var(--bad);">${a.redFlags.map(r=>'· '+escapeHtml(r)).join(' ')}</div></div>` : ''}
+      ${a.redFlags && a.redFlags.length ? `<div class="analysis-row"><div class="label" style="color:var(--bad);">⚠️ 회피 표현</div><div style="color:var(--bad);">${a.redFlags.map(r=>'· '+escapeHtml(r)).join(' ')}</div></div>` : ''}
     </div>
   `;
 
@@ -702,7 +858,7 @@ function renderResults(res, cost, isCached) {
   ss.style.display = 'block';
   ss.innerHTML = `
     <div class="suggestion-section">
-      <div style="font-size:12px;font-weight:700;color:var(--text-dim);margin-bottom:10px;text-transform:uppercase;">💬 추천 답장 후보 (클릭 시 복사 / 수정)</div>
+      <div style="font-size:12px;font-weight:700;color:var(--text-dim);margin-bottom:10px;text-transform:uppercase;">💬 추천 답장 후보 (카드 클릭 시 복사 / ✏️ 클릭 시 수정 및 학습)</div>
       ${res.candidates.map((c, i) => {
         const isWow = c.tier === 'wow';
         return `
@@ -719,7 +875,7 @@ function renderResults(res, cost, isCached) {
             </div>
             <div class="text">${escapeHtml(c.text)}</div>
             ${c.rationale ? `<div class="why"><b>💡</b> ${escapeHtml(c.rationale)}</div>` : ''}
-            ${c.wow_detail ? `<div class="why" style="margin-top:4px;color:var(--wow);"><b>⚡</b> ${escapeHtml(c.wow_detail)}</div>` : ''}
+            ${c.wow_detail ? `<div class="why" style="margin-top:6px;color:var(--wow);"><b>⚡ Insight:</b> ${escapeHtml(c.wow_detail)}</div>` : ''}
           </div>
         `;
       }).join('')}
@@ -727,10 +883,10 @@ function renderResults(res, cost, isCached) {
   `;
 }
 
-// User Actions
-async function generateCustom() {
+// User Action Handlers
+async function handleGenerateCustom() {
   const lastMsg = document.getElementById('custom-last-msg').value.trim();
-  if (!lastMsg) { toast('상대방 메시지를 입력해주세요!'); return; }
+  if (!lastMsg) { toast('⚠️ 상대방 메시지를 입력해주세요!'); return; }
   const rel = document.getElementById('custom-relation').value;
   const intent = document.getElementById('custom-my-intent').value.trim();
   const context = intent ? `사용자 희망 의도: ${intent}` : '자유 대화';
@@ -746,7 +902,7 @@ async function generateCustom() {
   }
 }
 
-async function generatePreset() {
+async function handleGeneratePreset() {
   const p = PRESET_SCENARIOS[state.currentPresetId];
   if (!p) return;
   state.currentRelation = p.relation;
@@ -771,6 +927,7 @@ function selectPreset(id) {
     </div>
   `).join('');
   document.getElementById('preset-phone-wrap').style.display = 'block';
+  document.getElementById('preset-phone-wrap').scrollIntoView({ behavior: 'smooth' });
 }
 
 function setMode(mode) {
@@ -792,14 +949,15 @@ function openEditModal(idx) {
   document.getElementById('edit-textarea').value = state.editingOriginal;
   document.getElementById('diff-output').textContent = '변경 사항이 없습니다.';
   document.getElementById('edit-modal').classList.add('show');
+  document.getElementById('edit-textarea').focus();
   document.getElementById('edit-textarea').oninput = onEditInput;
 }
 function onEditInput() {
   const cur = document.getElementById('edit-textarea').value;
   const diff = computeDiff(state.editingOriginal, cur);
   let html = '';
-  if (diff.added.length) html += `<div><span style="color:var(--good);font-weight:700;">➕ 추가:</span> ` + diff.added.map(w=>`<span class="diff-add">${escapeHtml(w)}</span>`).join(' ') + `</div>`;
-  if (diff.removed.length) html += `<div><span style="color:var(--bad);font-weight:700;">➖ 삭제:</span> ` + diff.removed.map(w=>`<span class="diff-remove">${escapeHtml(w)}</span>`).join(' ') + `</div>`;
+  if (diff.added.length) html += `<div><span style="color:var(--good);font-weight:700;">➕ 추가 어휘:</span> ` + diff.added.map(w=>`<span class="diff-add">${escapeHtml(w)}</span>`).join(' ') + `</div>`;
+  if (diff.removed.length) html += `<div><span style="color:var(--bad);font-weight:700;">➖ 삭제 어휘:</span> ` + diff.removed.map(w=>`<span class="diff-remove">${escapeHtml(w)}</span>`).join(' ') + `</div>`;
   document.getElementById('diff-output').innerHTML = html || '변경 사항이 없습니다.';
 }
 function closeEditModal() { document.getElementById('edit-modal').classList.remove('show'); }
@@ -810,7 +968,7 @@ function saveEditAndLearn() {
     ProfileStore.update(state.currentRelation, state.editingOriginal, edited, diff);
     state.lastResult.candidates[state.editingIdx].text = edited;
     renderResults(state.lastResult, 0, false);
-    toast('🧠 수정 스타일이 프로필에 학습되었습니다!');
+    toast('🧠 수정 문체가 프로필에 온디바이스 학습되었습니다!');
   }
   closeEditModal();
 }
@@ -822,7 +980,7 @@ function pasteClipboard(targetId) {
   }).catch(() => toast('클립보드 접근 권한이 필요합니다.'));
 }
 
-// Stats & Profile UI
+// Profile UI
 function renderProfile() {
   document.getElementById('p-total-samples').textContent = ProfileStore.data.overall.samples;
   document.getElementById('p-total-calls').textContent = state.totalCalls;
@@ -831,7 +989,7 @@ function renderProfile() {
   const rels = ['boss', 'client', 'senior', 'colleague', 'junior', 'professor', 'school', 'romantic', 'parent', 'sibling', 'friend'];
   const labels = {
     boss:'상사', client:'클라이언트', senior:'선배', colleague:'동료', junior:'후배',
-    professor:'교수님', school:'학교친구', romantic:'연인', parent:'부모님', sibling:'형제', friend:'친구'
+    professor:'교수님', school:'학교친구', romantic:'연인', parent:'부모님', sibling:'형제자매', friend:'친구'
   };
 
   let html = '';
@@ -843,12 +1001,12 @@ function renderProfile() {
       <div class="relation-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
           <span style="font-size:13.5px;font-weight:700;">${labels[r]} (${rp.samples}회 학습)</span>
-          <span style="font-size:11px;color:var(--text-mute);">${formalPct}% 격식도</span>
+          <span style="font-size:11px;color:var(--text-mute);">${formalPct}% 격식도 편향</span>
         </div>
         <div style="height:6px;background:var(--bg-elev);border-radius:3px;overflow:hidden;margin-bottom:6px;">
           <div style="width:${formalPct}%;height:100%;background:var(--grad-cool);"></div>
         </div>
-        <div>${phrases.length ? phrases.map(([w,c])=>`<span class="phrase">"${escapeHtml(w)}" ×${c}</span>`).join('') : '<span style="font-size:11px;color:var(--text-mute);">아직 학습된 맞춤 표현 없음</span>'}</div>
+        <div>${phrases.length ? phrases.map(([w,c])=>`<span class="phrase">"${escapeHtml(w)}" ×${c}</span>`).join('') : '<span style="font-size:11px;color:var(--text-mute);">아직 학습된 맞춤 어휘 없음</span>'}</div>
       </div>
     `;
   }
@@ -860,7 +1018,7 @@ function exportProfile() {
   const blob = new Blob([json], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `wsir_profile_${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `wsir_profile_backup_${new Date().toISOString().slice(0,10)}.json`;
   a.click();
 }
 function importProfile(e) {
@@ -873,7 +1031,7 @@ function importProfile(e) {
       ProfileStore.save();
       renderProfile();
       toast('📂 프로필 복원 완료');
-    } catch(err) { alert('유효하지 않은 프로필 파일입니다.'); }
+    } catch(err) { alert('유효하지 않은 프로필 백업 파일입니다.'); }
   };
   reader.readAsText(file);
 }
@@ -885,25 +1043,38 @@ function resetProfile() {
     toast('초기화 완료');
   }
 }
-function resetKey() {
-  if (confirm('API 키를 삭제하시겠습니까?')) {
-    localStorage.removeItem(KEY_STORAGE);
-    location.reload();
+
+// Mode & Key Toggles
+function updateModeIndicator() {
+  const ind = document.getElementById('mode-indicator');
+  const hasKey = !!localStorage.getItem(KEY_STORAGE);
+  if (hasKey) {
+    ind.className = 'badge-mode real';
+    ind.textContent = '🚀 Real API';
+  } else {
+    ind.className = 'badge-mode demo';
+    ind.textContent = '⚡ 체험 모드';
   }
 }
-
+function toggleEngineMode() { openKeyModal(); }
+function openKeyModal() {
+  const key = localStorage.getItem(KEY_STORAGE) || '';
+  document.getElementById('api-key-input').value = key;
+  document.getElementById('key-modal').classList.add('show');
+}
+function closeKeyModal() { document.getElementById('key-modal').classList.remove('show'); }
 function saveKey() {
   const k = document.getElementById('api-key-input').value.trim();
-  if (!k.startsWith('sk-')) { alert('유효한 OpenAI API 키(sk-...)를 입력해주세요.'); return; }
-  localStorage.setItem(KEY_STORAGE, k);
-  enterApp();
-}
-
-function enterApp() {
-  document.getElementById('screen-setup').classList.remove('active');
-  document.getElementById('screen-main').classList.add('active');
-  loadStats();
-  renderProfile();
+  if (k && !k.startsWith('sk-')) { alert('유효한 OpenAI API 키(sk-...)를 입력해주세요.'); return; }
+  if (k) {
+    localStorage.setItem(KEY_STORAGE, k);
+    toast('🔑 API 키 저장 완료! Real LLM 엔진 활성화');
+  } else {
+    localStorage.removeItem(KEY_STORAGE);
+    toast('⚡ 체험 모드로 전환되었습니다.');
+  }
+  updateModeIndicator();
+  closeKeyModal();
 }
 
 function switchTab(tab) {
@@ -934,18 +1105,29 @@ function toast(msg) {
   el.className = 'toast';
   el.textContent = msg;
   document.body.appendChild(el);
-  setTimeout(() => el.remove(), 2200);
+  setTimeout(() => el.remove(), 2400);
 }
-function escapeHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escapeHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
-// Init
+// Global Keyboard Shortcuts
+window.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    if (document.getElementById('screen-main').classList.contains('active')) {
+      handleGenerateCustom();
+    }
+  }
+  if (e.key === 'Escape') {
+    closeKeyModal();
+    closeEditModal();
+  }
+});
+
+// App Bootstrap
 ProfileStore.init();
 loadStats();
-if (localStorage.getItem(KEY_STORAGE)) {
-  enterApp();
-} else {
-  document.getElementById('screen-setup').classList.add('active');
-}
+updateModeIndicator();
 </script>
 </body>
 </html>
