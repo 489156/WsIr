@@ -1596,11 +1596,31 @@ function renderResults(res, cost, isCached) {
   ct.style.display = 'grid';
   const totalCalls = state.cacheHits + state.cacheMisses;
   const hitRate = totalCalls === 0 ? 0 : Math.round((state.cacheHits / totalCalls) * 100);
+  const hasKey = !!localStorage.getItem(KEY_STORAGE);
+  const billedCostText = isCached ? '₩0 (캐시 적중)' : (hasKey ? '₩0 (무료 티어)' : '₩0 (체험 모드)');
+  const valSubtext = cost > 0 ? `소모가치 ₩${cost}` : '0원 소모';
+  const totalValSubtext = state.totalCostKRW > 0 ? `누적가치 ₩${state.totalCostKRW}` : '0원 소모';
+
   ct.innerHTML = `
-    <div class="cost-item"><div class="v">₩${cost}</div><div class="l">이번 세션</div></div>
-    <div class="cost-item"><div class="v">₩${state.totalCostKRW}</div><div class="l">누적 비용</div></div>
-    <div class="cost-item"><div class="v">${hitRate}%</div><div class="l">캐시 적중</div></div>
-    <div class="cost-item"><div class="v">${state.totalCalls}회</div><div class="l">총 호출</div></div>
+    <div class="cost-item">
+      <div class="v" style="color:var(--accent); font-size:14px;">${billedCostText}</div>
+      <div class="l">실제 청구 (${valSubtext})</div>
+    </div>
+    <div class="cost-item">
+      <div class="v" style="font-size:14px;">₩0</div>
+      <div class="l">누적 청구액 (${totalValSubtext})</div>
+    </div>
+    <div class="cost-item">
+      <div class="v" style="font-size:14px;">${hitRate}%</div>
+      <div class="l">캐시 절감률</div>
+    </div>
+    <div class="cost-item">
+      <div class="v" style="font-size:14px;">${state.totalCalls}회</div>
+      <div class="l">총 호출 수</div>
+    </div>
+    <div style="grid-column: 1 / -1; font-size: 11px; color: var(--text-mute); padding-top: 6px; border-top: 1px dashed var(--line-soft); text-align: center; line-height: 1.4;">
+      💡 <b>Google AI Studio 무료 티어(Free Tier) 적용 중:</b> 신용카드/결제수단이 등록되지 않은 API Key이므로 <b>실제 청구 금액은 ₩0(완전 무료)</b>입니다. (괄호 안 금액은 상용 유료 API 요율 환산 가치)
+    </div>
   `;
 
   // Render Analysis
