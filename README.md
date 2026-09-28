@@ -4,7 +4,7 @@
 
 [![Prototype Live](https://img.shields.io/badge/Prototype-Engine%20v5%20Live-FF7A59?style=for-the-badge&logo=googlechrome&logoColor=white)](https://tpwkujhv18eih.space.minimax.io/)
 [![GitHub Repo](https://img.shields.io/badge/GitHub-WsIr%20Repository-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/489156/WsIr)
-[![LLM Architecture](https://img.shields.io/badge/LLM-Google%20Gemini%202.5%20Flash%20(Thinking)-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
+[![LLM Architecture](https://img.shields.io/badge/LLM-Google%20Gemini%203.8%20Flash%20(Interactions%20API)-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
 [![License](https://img.shields.io/badge/License-Proprietary-yellow?style=for-the-badge)]()
 
 ---

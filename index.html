@@ -922,20 +922,145 @@ function computeFormalityShift(orig, edit) {
 }
 
 
-// Google Gemini 3.8 Flash Vision Multimodal Call
+// Response Text Extractor supporting both Interactions API and generateContent
+function extractTextFromGemini(data) {
+  if (!data) return '';
+  // 1. Direct output_text (Interactions API standard response)
+  if (typeof data.output_text === 'string' && data.output_text.trim()) {
+    return data.output_text;
+  }
+  // 2. Interactions API steps format (steps[].content[].text)
+  if (Array.isArray(data.steps)) {
+    let combined = '';
+    for (const step of data.steps) {
+      if (step.type === 'model_output' || !step.type) {
+        if (Array.isArray(step.content)) {
+          for (const item of step.content) {
+            if (item && item.type === 'text' && typeof item.text === 'string') combined += item.text;
+            else if (item && typeof item.text === 'string') combined += item.text;
+          }
+        } else if (typeof step.text === 'string') {
+          combined += step.text;
+        }
+      }
+    }
+    if (combined.trim()) return combined;
+  }
+  // 3. Alternative outputs array
+  if (Array.isArray(data.outputs)) {
+    const last = data.outputs[data.outputs.length - 1];
+    if (typeof last === 'string') return last;
+    if (last && typeof last.text === 'string') return last.text;
+  }
+  // 4. Legacy generateContent candidates structure
+  if (data.candidates?.[0]?.content?.parts) {
+    let combined = '';
+    for (const part of data.candidates[0].content.parts) {
+      if (part && part.text) combined += part.text;
+    }
+    if (combined.trim()) return combined;
+  }
+  return '';
+}
+
+// Token & KRW Cost Calculator (Gemini 3.8 Flash GA Pricing: Input $0.75/1M, Output $3.75/1M, Free Tier ₩0)
+function extractTokenUsage(data) {
+  const usage = data.usage || data.usageMetadata || {};
+  const inTokens = usage.total_input_tokens || usage.promptTokenCount || 0;
+  const outTokens = usage.total_output_tokens || usage.candidatesTokenCount || 0;
+  const costKRW = Math.round(((inTokens * 0.75 + outTokens * 3.75) / 1000000) * 1350);
+  return { inTokens, outTokens, costKRW };
+}
+
+// Resilient JSON Parser (handles markdown code fences and reasoning traces)
+function safeJsonParse(rawText) {
+  if (!rawText) throw new Error('모델 응답이 비어있습니다.');
+  let cleaned = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch (e1) {
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (match) {
+      return JSON.parse(match[0]);
+    }
+    throw new Error(`JSON 파싱 실패: ${cleaned.slice(0, 100)}...`);
+  }
+}
+
+// Google Gemini 3.8 Flash Vision Multimodal Call (Interactions API Standard)
 async function callGeminiVision(base64Data, mimeType, systemPrompt, userPrompt) {
   const key = localStorage.getItem(KEY_STORAGE);
   if (!key) throw new Error('Google Gemini API 키가 설정되지 않았습니다.');
 
-  const models = ['gemini-3.8-flash', 'gemini-2.5-flash'];
-  let lastError = null;
   const cleanBase64 = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
+  let lastError = null;
 
-  for (const model of models) {
+  // 1. Primary: Google Interactions API (Default Standard since June 2026)
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/interactions?key=${encodeURIComponent(key)}`;
+    const payload = {
+      model: 'gemini-3.8-flash',
+      system_instruction: systemPrompt,
+      input: [
+        {
+          type: 'text',
+          text: userPrompt
+        },
+        {
+          type: 'image',
+          data: cleanBase64,
+          mime_type: mimeType || 'image/jpeg'
+        }
+      ],
+      response_format: {
+        type: 'text',
+        mime_type: 'application/json'
+      },
+      store: false
+    };
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': key
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      state.totalCalls++;
+      const { costKRW } = extractTokenUsage(data);
+      state.totalCostKRW += costKRW;
+
+      const rawText = extractTextFromGemini(data);
+      const parsed = safeJsonParse(rawText);
+      return { content: parsed, costKRW, modelUsed: 'gemini-3.8-flash (Interactions API)' };
+    } else {
+      const err = await res.json().catch(() => ({}));
+      const errMsg = err.error?.message || `Interactions API Vision 오류 (${res.status})`;
+      if (res.status === 400 || res.status === 403) {
+        if (errMsg.toLowerCase().includes('key') || errMsg.toLowerCase().includes('permission') || res.status === 403) {
+          throw new Error(`API 키가 유효하지 않거나 권한이 없습니다: ${errMsg}`);
+        }
+      } else if (res.status === 429) {
+        throw new Error(`무료 사용량(RPM/RPD)을 초과했습니다: ${errMsg}`);
+      }
+      lastError = new Error(errMsg);
+    }
+  } catch(e) {
+    if (e.message.includes('API 키') || e.message.includes('사용량') || e.message.includes('429')) throw e;
+    lastError = e;
+  }
+
+  // 2. Secondary Fallback: generateContent Multimodal (gemini-3.8-flash -> gemini-3.7-flash)
+  const fallbackModels = ['gemini-3.8-flash', 'gemini-3.7-flash'];
+  for (const model of fallbackModels) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
       const payload = {
-        systemInstruction: {
+        system_instruction: {
           parts: [{ text: systemPrompt }]
         },
         contents: [
@@ -943,8 +1068,8 @@ async function callGeminiVision(base64Data, mimeType, systemPrompt, userPrompt) 
             role: 'user',
             parts: [
               {
-                inlineData: {
-                  mimeType: mimeType || 'image/jpeg',
+                inline_data: {
+                  mime_type: mimeType || 'image/jpeg',
                   data: cleanBase64
                 }
               },
@@ -966,8 +1091,12 @@ async function callGeminiVision(base64Data, mimeType, systemPrompt, userPrompt) 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         const errMsg = err.error?.message || `Gemini Vision 분석 오류 (${res.status})`;
-        if (res.status === 400 || res.status === 403 || res.status === 429) {
-          throw new Error(errMsg);
+        if (res.status === 400 || res.status === 403) {
+          if (errMsg.toLowerCase().includes('key') || errMsg.toLowerCase().includes('permission') || res.status === 403) {
+            throw new Error(`API 키가 유효하지 않거나 권한이 없습니다: ${errMsg}`);
+          }
+        } else if (res.status === 429) {
+          throw new Error(`무료 사용량 초과: ${errMsg}`);
         }
         lastError = new Error(errMsg);
         continue;
@@ -975,23 +1104,18 @@ async function callGeminiVision(base64Data, mimeType, systemPrompt, userPrompt) 
 
       const data = await res.json();
       state.totalCalls++;
-
-      const usage = data.usageMetadata || {};
-      const inTokens = usage.promptTokenCount || 0;
-      const outTokens = usage.candidatesTokenCount || 0;
-      // Gemini 3.8 Flash 단가: Input $0.75/1M, Output $3.75/1M (Free Tier ₩0)
-      const costKRW = Math.round(((inTokens * 0.75 + outTokens * 3.75) / 1000000) * 1350);
+      const { costKRW } = extractTokenUsage(data);
       state.totalCostKRW += costKRW;
 
-      let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-      rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-
-      return { content: JSON.parse(rawText), costKRW, modelUsed: model };
+      const rawText = extractTextFromGemini(data);
+      const parsed = safeJsonParse(rawText);
+      return { content: parsed, costKRW, modelUsed: `${model} (generateContent Vision)` };
     } catch(e) {
-      lastError = e;
       if (e.message.includes('API 키') || e.message.includes('사용량') || e.message.includes('429')) throw e;
+      lastError = e;
     }
   }
+
   throw lastError || new Error('Gemini Vision API 호출에 실패했습니다.');
 }
 
@@ -1109,20 +1233,71 @@ ${promptCtx}`;
   }
 }
 
-// Google Gemini API Official Integration Call
+// Google Gemini API Official Integration Call (Interactions API Standard)
 async function callGemini(systemPrompt, userPrompt) {
   const key = localStorage.getItem(KEY_STORAGE);
   if (!key) throw new Error('Google Gemini API 키가 설정되지 않았습니다.');
 
-  // Standard GA: gemini-3.8-flash (Primary), fallback: gemini-2.5-flash (GA Fallback Architecture)
-  const models = ['gemini-3.8-flash', 'gemini-2.5-flash'];
   let lastError = null;
 
-  for (const model of models) {
+  // 1. Primary: Google Interactions API (Default Standard since June 2026)
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/interactions?key=${encodeURIComponent(key)}`;
+    const payload = {
+      model: 'gemini-3.8-flash',
+      input: userPrompt,
+      system_instruction: systemPrompt,
+      response_format: {
+        type: 'text',
+        mime_type: 'application/json'
+      },
+      store: false
+    };
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': key
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      state.totalCalls++;
+      const { costKRW } = extractTokenUsage(data);
+      state.totalCostKRW += costKRW;
+
+      const rawText = extractTextFromGemini(data);
+      const parsed = safeJsonParse(rawText);
+      return { content: parsed, costKRW, modelUsed: 'gemini-3.8-flash (Interactions API)' };
+    } else {
+      const err = await res.json().catch(() => ({}));
+      const errMsg = err.error?.message || `Google Gemini Interactions API 오류 (${res.status})`;
+      if (res.status === 400 || res.status === 403) {
+        if (errMsg.toLowerCase().includes('key') || errMsg.toLowerCase().includes('permission') || res.status === 403) {
+          throw new Error(`API 키가 유효하지 않거나 권한이 없습니다: ${errMsg}`);
+        }
+      } else if (res.status === 429) {
+        throw new Error(`무료 사용량(15 RPM / 1,500 RPD)을 초과했습니다: ${errMsg}`);
+      }
+      lastError = new Error(errMsg);
+    }
+  } catch(e) {
+    if (e.message.includes('API 키가 유효하지 않거나') || e.message.includes('무료 사용량')) {
+      throw e;
+    }
+    lastError = e;
+  }
+
+  // 2. Secondary Fallback: generateContent REST Endpoint (gemini-3.8-flash -> gemini-3.7-flash)
+  const fallbackModels = ['gemini-3.8-flash', 'gemini-3.7-flash'];
+  for (const model of fallbackModels) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
       const payload = {
-        systemInstruction: {
+        system_instruction: {
           parts: [{ text: systemPrompt }]
         },
         contents: [
@@ -1146,7 +1321,9 @@ async function callGemini(systemPrompt, userPrompt) {
         const err = await res.json().catch(() => ({}));
         const errMsg = err.error?.message || `Google Gemini API 통신 오류 (${res.status})`;
         if (res.status === 400 || res.status === 403) {
-          throw new Error(`API 키가 유효하지 않거나 권한이 없습니다: ${errMsg}`);
+          if (errMsg.toLowerCase().includes('key') || errMsg.toLowerCase().includes('permission') || res.status === 403) {
+            throw new Error(`API 키가 유효하지 않거나 권한이 없습니다: ${errMsg}`);
+          }
         } else if (res.status === 429) {
           throw new Error(`무료 사용량(15 RPM / 1,500 RPD)을 초과했습니다: ${errMsg}`);
         }
@@ -1156,19 +1333,12 @@ async function callGemini(systemPrompt, userPrompt) {
 
       const data = await res.json();
       state.totalCalls++;
-
-      const usage = data.usageMetadata || {};
-      const inTokens = usage.promptTokenCount || 0;
-      const outTokens = usage.candidatesTokenCount || 0;
-      // Gemini 3.8 Flash 단가: Input $0.75/1M, Output $3.75/1M (Free Tier ₩0)
-      const costKRW = Math.round(((inTokens * 0.75 + outTokens * 3.75) / 1000000) * 1350);
+      const { costKRW } = extractTokenUsage(data);
       state.totalCostKRW += costKRW;
 
-      let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-      rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-
-      const parsed = JSON.parse(rawText);
-      return { content: parsed, costKRW, modelUsed: model };
+      const rawText = extractTextFromGemini(data);
+      const parsed = safeJsonParse(rawText);
+      return { content: parsed, costKRW, modelUsed: `${model} (generateContent)` };
     } catch(e) {
       lastError = e;
       if (e.message.includes('API 키가 유효하지 않거나') || e.message.includes('무료 사용량')) {
@@ -1176,7 +1346,8 @@ async function callGemini(systemPrompt, userPrompt) {
       }
     }
   }
-  throw lastError || new Error('Gemini API 호출에 실패했습니다.');
+
+  throw lastError || new Error('Google Gemini API 호출에 실패했습니다.');
 }
 
 // Master Pipeline Execution
