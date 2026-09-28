@@ -4,7 +4,7 @@
 
 [![Prototype Live](https://img.shields.io/badge/Prototype-Engine%20v5%20Live-FF7A59?style=for-the-badge&logo=googlechrome&logoColor=white)](https://tpwkujhv18eih.space.minimax.io/)
 [![GitHub Repo](https://img.shields.io/badge/GitHub-WsIr%20Repository-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/489156/WsIr)
-[![LLM Architecture](https://img.shields.io/badge/LLM-Multi--Model%20Routing%20(Mini%20%2B%204o)-7C9EFF?style=for-the-badge&logo=openai&logoColor=white)](https://platform.openai.com/)
+[![LLM Architecture](https://img.shields.io/badge/LLM-Google%20Gemini%202.5%20Flash%20(Thinking)-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
 [![License](https://img.shields.io/badge/License-Proprietary-yellow?style=for-the-badge)]()
 
 ---
@@ -18,7 +18,7 @@
 2. **한국 특유의 11개 사회적 관계 위계(상사, 선배, 클라이언트, 연인 등)**에 최적화된 3가지 톤(격식/캐주얼/따뜻) 후보를 즉시 생성합니다.
 3. 상대방의 기대를 뛰어넘는 전략적 통찰을 담은 **⚡ Wow Point 답장 1개**를 제공합니다.
 4. 사용자 편집 피드백을 실시간 수집하는 **LCS diff 기반 재귀 자기개선 엔진**을 통해, 쓸수록 사용자 고유의 어조와 선호 스타일로 진화합니다.
-5. **Multi-Model Routing(GPT-4o-mini 80% + GPT-4o 20%)과 24시간 캐싱**을 통해 고성능을 유지하면서 호출 비용을 **94% 절감(세션당 약 ₩11)**하여 지속 가능한 유닛 이코노믹스를 달성했습니다.
+5. **Google Gemini 2.5 Flash 공식 연동(Thinking 추론 내장)과 24시간 캐싱**을 통해 고성능을 유지하면서 1일 1,500회 **완전 무료(Free Tier)** 및 유료 전환 시에도 **세션당 ₩1.8원**으로 극상의 유닛 이코노믹스를 달성했습니다.
 
 ---
 
@@ -51,7 +51,7 @@
 ├─────────────────────┼──────────────────────────────────────────────────┤
 │ 🧠 재귀 자기개선     │ 사용자 수정본 diff 분석 → 내 말투로 자동 프로파일링  │
 ├─────────────────────┼──────────────────────────────────────────────────┤
-│ 💸 Multi-Model 라우팅│ mini(80%) + 4o(20%) + 캐싱 → ₩11/세션 (94% 비용 절감)│
+│ 💸 Multi-Model 라우팅│ Gemini 2.5 Flash + 캐싱 → ₩0(Free) ~ ₩1.8/세션│
 ├─────────────────────┼──────────────────────────────────────────────────┤
 │ 🔒 철저한 프라이버시 │ 대화 원문 서버 비저장 + BYOK 로컬 암호화 저장         │
 └─────────────────────┴──────────────────────────────────────────────────┘
