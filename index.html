@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#0b0d12" />
+<title>나 뭐라고 보낼까? (WsIr) — Functional Engine v5.1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0d12;
+    --bg-soft: #11141b;
+    --bg-card: #161a23;
+    --bg-elev: #1c2030;
+    --line: #232938;
+    --line-soft: #1c2030;
+    --text: #e8ecf4;
+    --text-dim: #a3acc0;
+    --text-mute: #6f788d;
+    --brand: #ff7a59;
+    --brand-2: #ffb86b;
+    --accent: #7c9eff;
+    --accent-2: #5ce4d0;
+    --good: #4ade80;
+    --warn: #facc15;
+    --bad: #ff6b6b;
+    --wow: #fbbf24;
+    --grad: linear-gradient(135deg, #ff7a59 0%, #ffb86b 50%, #ffd28a 100%);
+    --grad-cool: linear-gradient(135deg, #7c9eff 0%, #5ce4d0 100%);
+    --grad-wow: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #ea580c 100%);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    background: var(--bg); color: var(--text);
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    line-height: 1.5; -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background:
+      radial-gradient(ellipse at 80% -10%, rgba(251,191,36,0.10), transparent 50%),
+      radial-gradient(ellipse at 10% 30%, rgba(255,122,89,0.08), transparent 50%),
+      var(--bg);
+    min-height: 100vh;
+  }
+  .app {
+    max-width: 480px; margin: 0 auto;
+    min-height: 100vh; position: relative;
+    padding-bottom: 90px;
+  }
+  @media (min-width: 800px) {
+    .app { margin-top: 24px; margin-bottom: 24px; min-height: calc(100vh - 48px); border-radius: 32px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  }
+  .header {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(20px);
+    background: rgba(11,13,18,0.88);
+    border-bottom: 1px solid var(--line-soft);
+    padding: 14px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 15px; }
+  .header .brand .dot {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: var(--grad);
+    display: grid; place-items: center;
+    color: #1a1206; font-weight: 900; font-size: 14px;
+  }
+  .v-tag {
+    background: linear-gradient(135deg, rgba(251,191,36,0.15), rgba(245,158,11,0.10));
+    color: var(--wow);
+    font-size: 10.5px; font-weight: 700; padding: 4px 8px; border-radius: 6px;
+    border: 1px solid rgba(251,191,36,0.3);
+    letter-spacing: 0.04em;
+  }
+  .icon-btn {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: var(--bg-card); border: 1px solid var(--line);
+    display: grid; place-items: center;
+    color: var(--text-dim); font-size: 14px; cursor: pointer; transition: 0.2s;
+  }
+  .icon-btn:hover { border-color: var(--brand); color: var(--text); }
+
+  /* Mode switch */
+  .mode-switch {
+    display: flex; background: var(--bg-card); border: 1px solid var(--line);
+    border-radius: 12px; padding: 4px; margin: 16px 18px 8px; gap: 4px;
+  }
+  .mode-tab {
+    flex: 1; padding: 8px 12px; border-radius: 8px; text-align: center;
+    font-size: 13px; font-weight: 600; color: var(--text-dim); cursor: pointer; transition: 0.2s;
+  }
+  .mode-tab.active { background: var(--bg-elev); color: var(--text); font-weight: 700; border: 1px solid var(--line-soft); }
+
+  /* Forms & Custom Input */
+  .custom-box {
+    background: var(--bg-card); border: 1px solid var(--line);
+    border-radius: 16px; padding: 18px; margin: 12px 18px;
+  }
+  .form-group { margin-bottom: 14px; }
+  .form-group label {
+    font-size: 12px; color: var(--text-dim); font-weight: 700;
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;
+  }
+  .form-group select, .form-group textarea, .form-group input {
+    width: 100%; padding: 12px 14px;
+    background: var(--bg-elev); border: 1px solid var(--line);
+    border-radius: 10px; color: var(--text); font-family: inherit; font-size: 13.5px;
+    outline: none; transition: 0.2s;
+  }
+  .form-group select:focus, .form-group textarea:focus, .form-group input:focus { border-color: var(--brand); }
+  .form-group textarea { min-height: 90px; resize: vertical; line-height: 1.5; }
+
+  /* Setup */
+  .setup-screen { padding: 40px 20px; display: flex; flex-direction: column; justify-content: center; }
+  .setup-hero { text-align: center; margin-bottom: 24px; }
+  .setup-hero .ico {
+    width: 64px; height: 64px; border-radius: 20px;
+    background: var(--grad);
+    display: inline-grid; place-items: center;
+    color: #1a1206; font-weight: 900; font-size: 28px;
+    margin-bottom: 16px; box-shadow: 0 12px 30px rgba(255,122,89,0.3);
+  }
+  .setup-hero h2 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+  .setup-hero p { color: var(--text-dim); font-size: 13.5px; max-width: 320px; margin: 0 auto; line-height: 1.6; }
+  .security-badge {
+    background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.25);
+    border-radius: 12px; padding: 12px 14px; margin-bottom: 16px;
+    font-size: 12px; color: var(--text-dim); line-height: 1.5; display: flex; align-items: center; gap: 10px;
+  }
+  .security-badge .ico {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: rgba(74,222,128,0.15); color: var(--good);
+    display: grid; place-items: center; font-size: 14px; flex-shrink: 0;
+  }
+
+  /* Buttons */
+  .cta {
+    width: 100%; padding: 15px; background: var(--grad); color: #1a1206;
+    border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 8px 24px rgba(255,122,89,0.25); display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: 0.2s;
+  }
+  .cta:hover { transform: translateY(-1px); }
+  .cta.wow { background: var(--grad-wow); box-shadow: 0 8px 24px rgba(251,191,36,0.3); }
+  .cta.secondary { background: var(--bg-card); color: var(--text); border: 1px solid var(--line); box-shadow: none; }
+  .cta.secondary:hover { border-color: var(--brand); }
+  .cta:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Scenario list */
+  .scenario-list { display: flex; flex-direction: column; gap: 8px; padding: 0 18px 12px; }
+  .scenario-item {
+    background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px; padding: 14px;
+    cursor: pointer; transition: 0.15s; display: flex; align-items: center; gap: 12px;
+  }
+  .scenario-item:hover { border-color: var(--brand); transform: translateX(2px); }
+  .scenario-item .ico {
+    width: 38px; height: 38px; border-radius: 10px; background: var(--bg-elev);
+    display: grid; place-items: center; font-size: 18px; flex-shrink: 0;
+  }
+  .scenario-item .t { font-size: 13.5px; font-weight: 700; }
+  .scenario-item .d { font-size: 11.5px; color: var(--text-mute); margin-top: 2px; }
+  .scenario-item .arr { color: var(--text-mute); margin-left: auto; }
+
+  /* Mock Messenger */
+  .phone-wrap { padding: 12px 18px; }
+  .phone {
+    background: #fff; border-radius: 20px; border: 1px solid var(--line);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.3); overflow: hidden; color: #1a1a1a;
+  }
+  .msg-header { padding: 12px 16px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px; }
+  .msg-avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: white; font-weight: 700; font-size: 13px; }
+  .msg-name { font-size: 14px; font-weight: 700; }
+  .conversation { padding: 14px 12px; max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; background: #f5f6f8; }
+  .chat-row { display: flex; gap: 6px; }
+  .chat-row.me { justify-content: flex-end; }
+  .bubble { padding: 9px 12px; border-radius: 14px; font-size: 13.5px; max-width: 80%; line-height: 1.45; word-break: break-word; }
+  .chat-row.me .bubble { background: #ffeb33; border-bottom-right-radius: 4px; }
+  .chat-row.other .bubble { background: white; border-bottom-left-radius: 4px; border: 1px solid #e5e7eb; }
+  .bubble.highlighted { border: 2px solid var(--brand); box-shadow: 0 0 0 3px rgba(255,122,89,0.25); font-weight: 600; }
+
+  /* Cost tracker */
+  .cost-tracker {
+    background: var(--bg-card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 10px 14px; margin: 12px 18px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+    font-family: 'JetBrains Mono', monospace; text-align: center;
+  }
+  .cost-item .v { font-size: 15px; font-weight: 800; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .cost-item .l { font-size: 9.5px; color: var(--text-mute); margin-top: 2px; text-transform: uppercase; }
+
+  /* Analysis */
+  .analysis { background: var(--bg-card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin: 14px 18px; }
+  .analysis .head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .analysis .head .ico { width: 28px; height: 28px; border-radius: 8px; background: var(--grad-cool); display: grid; place-items: center; font-weight: 900; font-size: 12px; color: #0b1730; }
+  .analysis-row { display: grid; grid-template-columns: 75px 1fr; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--line-soft); font-size: 12.5px; }
+  .analysis-row:last-child { border-bottom: none; }
+  .analysis-row .label { color: var(--text-mute); font-weight: 700; font-size: 11px; }
+
+  /* Suggestions */
+  .suggestion-section { margin: 14px 18px; }
+  .suggestion-card {
+    background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 16px; margin-bottom: 10px; cursor: pointer; transition: 0.15s; position: relative;
+  }
+  .suggestion-card:hover { border-color: var(--brand); transform: translateY(-1px); }
+  .suggestion-card.wow {
+    border-color: rgba(251,191,36,0.45);
+    background: linear-gradient(135deg, rgba(251,191,36,0.06) 0%, rgba(245,158,11,0.03) 100%);
+  }
+  .suggestion-card .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .suggestion-card .meta { display: flex; align-items: center; gap: 6px; }
+  .tier-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+  .tier-badge.basic { background: var(--bg-elev); color: var(--text-dim); }
+  .tier-badge.thoughtful { background: rgba(124,158,255,0.15); color: var(--accent); }
+  .tier-badge.wow { background: var(--grad-wow); color: #1a1206; font-weight: 900; }
+  .model-tag { font-size: 9.5px; padding: 2px 6px; border-radius: 4px; background: rgba(92,228,208,0.12); color: var(--accent-2); font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+  .model-tag.premium { background: rgba(251,191,36,0.15); color: var(--wow); }
+  .suggestion-card .text { font-size: 14px; line-height: 1.55; color: var(--text); word-break: keep-all; }
+  .suggestion-card .why { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line-soft); font-size: 11.5px; color: var(--text-mute); }
+  .suggestion-card .why b { color: var(--text-dim); }
+  .suggestion-card .actions { display: flex; gap: 6px; margin-top: 10px; }
+
+  /* Modals */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+    z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-bg.show { display: flex; }
+  .modal { background: var(--bg-card); border: 1px solid var(--line); border-radius: 20px; padding: 20px; max-width: 400px; width: 100%; max-height: 85vh; overflow-y: auto; }
+  .diff-section { background: var(--bg-elev); border-radius: 10px; padding: 10px 12px; margin-top: 10px; font-size: 12px; line-height: 1.6; }
+  .diff-add { background: rgba(74,222,128,0.15); color: var(--good); padding: 1px 4px; border-radius: 3px; }
+  .diff-remove { background: rgba(255,107,107,0.15); color: var(--bad); padding: 1px 4px; border-radius: 3px; text-decoration: line-through; }
+
+  /* Profile */
+  .profile-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 18px 16px; }
+  .profile-box { background: var(--bg-card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; text-align: center; }
+  .profile-box .v { font-size: 20px; font-weight: 800; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .profile-box .l { font-size: 10px; color: var(--text-mute); margin-top: 2px; }
+  .relation-card { background: var(--bg-card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin: 0 18px 8px; }
+  .phrase { display: inline-block; padding: 3px 8px; border-radius: 100px; background: rgba(74,222,128,0.10); color: var(--good); font-size: 11px; font-weight: 600; margin: 2px; }
+
+  /* Navigation */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 480px; background: rgba(11,13,18,0.92); backdrop-filter: blur(20px);
+    border-top: 1px solid var(--line); display: flex; padding: 8px 8px 18px; z-index: 50;
+  }
+  @media (min-width: 800px) {
+    .bottom-nav { position: sticky; bottom: 0; max-width: none; width: 100%; transform: none; left: auto; border-radius: 0 0 32px 32px; }
+  }
+  .nav-btn { flex: 1; padding: 8px 0; background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-mute); font-size: 11px; font-weight: 600; cursor: pointer; }
+  .nav-btn.active { color: var(--brand); }
+
+  .toast {
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+    background: #fff; color: #000; padding: 10px 18px; border-radius: 100px;
+    font-size: 13px; font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,0.3); z-index: 300;
+  }
+  .screen { display: none; }
+  .screen.active { display: block; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">
+      <div class="dot">나</div>
+      <span>나 뭐라고 보낼까?</span>
+    </div>
+    <div style="display:flex; align-items:center; gap: 8px;">
+      <span class="v-tag">v5.1 FUNCTIONAL</span>
+      <button class="icon-btn" onclick="switchTab('profile')" title="학습 프로필">🧠</button>
+    </div>
+  </div>
+
+  <!-- Screen: SETUP -->
+  <div id="screen-setup" class="screen">
+    <div class="setup-screen">
+      <div class="setup-hero">
+        <div class="ico">나</div>
+        <h2>나 뭐라고 보낼까?</h2>
+        <p>복잡한 한국어 메신저 답장, 1초 안에 4개 후보 + ⚡ Wow Point 1개</p>
+      </div>
+      <div class="security-badge">
+        <div class="ico">🔒</div>
+        <div><b>Zero-Knowledge BYOK</b><br>API Key는 오직 브라우저 로컬에만 저장되며 외부 서버로 전송되지 않습니다.</div>
+      </div>
+      <div class="custom-box">
+        <div class="form-group">
+          <label>🔑 OpenAI API Key</label>
+          <input type="password" id="api-key-input" placeholder="sk-proj-..." autocomplete="off" />
+          <p style="font-size: 11px; color: var(--text-mute); margin-top: 6px;">
+            mini(80%) + 4o(20%) 멀티모델 라우팅으로 세션당 약 ₩11 내외로 동작합니다.
+          </p>
+        </div>
+        <button class="cta" onclick="saveKey()">시작하기 🚀</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen: MAIN -->
+  <div id="screen-main" class="screen">
+    <div class="mode-switch">
+      <div class="mode-tab active" id="tab-custom" onclick="setMode('custom')">✍️ 자유 대화 입력</div>
+      <div class="mode-tab" id="tab-preset" onclick="setMode('preset')">💬 5대 시나리오</div>
+    </div>
+
+    <!-- Mode: Custom Input -->
+    <div id="mode-custom-view">
+      <div class="custom-box">
+        <div class="form-group">
+          <label>👥 상대방과의 관계 (11대 카테고리)</label>
+          <select id="custom-relation">
+            <option value="boss">👔 직장 상사 (팀장님, 과장님 등)</option>
+            <option value="client">💼 클라이언트 / 고객사</option>
+            <option value="senior">🎓 직장/학교 선배</option>
+            <option value="colleague">🤝 직장 동료 (동기)</option>
+            <option value="junior">🌱 직장/학교 후배</option>
+            <option value="professor">🧑‍🏫 교수님</option>
+            <option value="school">🎒 학교 친구</option>
+            <option value="romantic">💕 연인 / 썸</option>
+            <option value="parent">👨‍👩‍👧 부모님</option>
+            <option value="sibling">👫 형제자매</option>
+            <option value="friend" selected>☕ 친한 친구</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <span>📩 상대방의 마지막 메시지</span>
+            <button onclick="pasteClipboard('custom-last-msg')" style="background:none;border:none;color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;">📋 붙여넣기</button>
+          </label>
+          <textarea id="custom-last-msg" placeholder="예: '주말에 시간 돼?', '이거 언제까지 가능해?', 'ㅋㅋ 괜찮아'"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>💡 내가 전달하고 싶은 핵심 (선택)</label>
+          <input type="text" id="custom-my-intent" placeholder="예: 거절하되 다음 주 제안 / 긍정 수락 / 일정 조율" />
+        </div>
+
+        <button class="cta wow" id="custom-gen-btn" onclick="generateCustom()">
+          <span>⚡</span> Multi-Model 답장 추천 요청
+        </button>
+      </div>
+    </div>
+
+    <!-- Mode: Preset Scenarios -->
+    <div id="mode-preset-view" style="display:none;">
+      <div class="scenario-list">
+        <div class="scenario-item" onclick="selectPreset('crush_weekend')">
+          <div class="ico">💕</div>
+          <div><div class="t">연인 · 주말 약속</div><div class="d">"주말에 시간 돼?" — 모호한 질문</div></div>
+          <div class="arr">›</div>
+        </div>
+        <div class="scenario-item" onclick="selectPreset('boss_deadline')">
+          <div class="ico">👔</div>
+          <div><div class="t">상사 · 보고서 마감</div><div class="d">"이거 언제까지 가능해?" — 압박 질문</div></div>
+          <div class="arr">›</div>
+        </div>
+        <div class="scenario-item" onclick="selectPreset('friend_subtext')">
+          <div class="ico">🤝</div>
+          <div><div class="t">친구 · 서운한 화해</div><div class="d">"ㅋㅋ 괜찮아" — 서운함을 포장</div></div>
+          <div class="arr">›</div>
+        </div>
+        <div class="scenario-item" onclick="selectPreset('family_mom')">
+          <div class="ico">👨‍👩‍👧</div>
+          <div><div class="t">가족 · 엄마 안부</div><div class="d">"잘 지내지? 전화해줘" — 외로움 신호</div></div>
+          <div class="arr">›</div>
+        </div>
+        <div class="scenario-item" onclick="selectPreset('client_polite')">
+          <div class="ico">💼</div>
+          <div><div class="t">클라이언트 · 미묘한 불만</div><div class="d">"확인해보겠습니다" — 회피/거절 신호</div></div>
+          <div class="arr">›</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Messenger Preview (when preset chosen) -->
+    <div id="preset-phone-wrap" class="phone-wrap" style="display:none;">
+      <div class="phone">
+        <div class="msg-header">
+          <div class="msg-avatar" id="p-avatar">팀</div>
+          <div><div class="msg-name" id="p-name">이름</div></div>
+        </div>
+        <div class="conversation" id="p-conv"></div>
+      </div>
+      <button class="cta wow" style="margin-top:12px;" onclick="generatePreset()">
+        <span>⚡</span> 이 시나리오로 답변 요청
+      </button>
+    </div>
+
+    <!-- Status & Costs -->
+    <div id="cost-tracker" class="cost-tracker" style="display:none;"></div>
+    <div id="analysis-section" style="display:none;"></div>
+    <div id="suggestions-section" style="display:none;"></div>
+  </div>
+
+  <!-- Screen: PROFILE -->
+  <div id="screen-profile" class="screen">
+    <div style="padding: 20px 18px 10px;">
+      <h2 style="font-size:20px; font-weight:800; margin-bottom:4px;">🧠 나만의 학습 프로필</h2>
+      <p style="font-size:12px; color:var(--text-dim);">답장을 수정할 때마다 LCS diff 알고리즘을 통해 내 말투를 학습합니다.</p>
+    </div>
+    <div class="profile-grid">
+      <div class="profile-box"><div class="v" id="p-total-samples">0</div><div class="l">학습 횟수</div></div>
+      <div class="profile-box"><div class="v" id="p-total-calls">0</div><div class="l">총 호출 수</div></div>
+      <div class="profile-box"><div class="v" id="p-total-cost">₩0</div><div class="l">누적 비용</div></div>
+    </div>
+    <div id="profile-relations-list"></div>
+
+    <div style="padding: 16px 18px; display:flex; flex-direction:column; gap:8px;">
+      <button class="cta secondary" onclick="exportProfile()">💾 프로필 데이터 백업 (JSON)</button>
+      <button class="cta secondary" onclick="document.getElementById('import-file').click()">📂 프로필 데이터 복원 (JSON)</button>
+      <input type="file" id="import-file" style="display:none;" onchange="importProfile(event)" />
+      <button class="cta secondary" style="color:var(--bad);" onclick="resetProfile()">🗑️ 학습 데이터 초기화</button>
+      <button class="cta secondary" style="color:var(--warn);" onclick="resetKey()">🔑 API 키 변경</button>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="btn-nav-main" onclick="switchTab('main')">
+      <span style="font-size:18px;">💬</span><span>메신저 답장</span>
+    </button>
+    <button class="nav-btn" id="btn-nav-profile" onclick="switchTab('profile')">
+      <span style="font-size:18px;">🧠</span><span>학습 프로필</span>
+    </button>
+  </div>
+
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-bg" id="edit-modal">
+  <div class="modal">
+    <h3 style="font-size:16px; font-weight:800; margin-bottom:4px;">✏️ 답장 수정 및 재귀 학습</h3>
+    <p style="font-size:12px; color:var(--text-dim); margin-bottom:12px;">원하는 말투로 수정해 저장하면 다음 추천부터 반영됩니다.</p>
+    <textarea id="edit-textarea" style="width:100%; min-height:90px; padding:10px; background:var(--bg-elev); border:1px solid var(--line); border-radius:10px; color:var(--text); font-family:inherit;"></textarea>
+    <div class="diff-section">
+      <div style="font-size:10px; color:var(--text-mute); font-weight:700; margin-bottom:4px;">DIFF 변경 감지</div>
+      <div id="diff-output">수정 시 변경 사항이 표시됩니다.</div>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:14px;">
+      <button class="cta secondary" style="flex:1;" onclick="closeEditModal()">취소</button>
+      <button class="cta" style="flex:1.5;" onclick="saveEditAndLearn()">저장하고 학습 🧠</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Core State & Storage Keys
+const KEY_STORAGE = 'wsir_openai_key';
+const PROFILE_KEY = 'wsir_profile_v5';
+const STATS_KEY = 'wsir_stats_v5';
+const CACHE_KEY = 'wsir_cache_v5';
+
+const PRESET_SCENARIOS = {
+  crush_weekend: {
+    relation: 'romantic', name: '지은', avatar: '지', color: '#ec4899',
+    lastMsg: '주말에 시간 되면 같이 맛있는 거 먹으러 갈래? 근데 어디로 갈지는 잘 모르겠어 ㅋㅋ',
+    conversation: [
+      { side: 'me', text: '오늘 하루 어땠어?' },
+      { side: 'other', text: '회사에서 좀 바빴어 너는?' },
+      { side: 'me', text: '나도 비슷! 근데 오늘 일찍 끝나서 좋아 ☺️' },
+      { side: 'other', text: '주말에 시간 되면 같이 맛있는 거 먹으러 갈래? 근데 어디로 갈지는 잘 모르겠어 ㅋㅋ', highlighted: true }
+    ]
+  },
+  boss_deadline: {
+    relation: 'boss', name: '팀장님', avatar: '팀', color: '#5e60ce',
+    lastMsg: '근데 이거 언제까지 가능해? 클라이언트에서 빨리 답변 달라고 하는데',
+    conversation: [
+      { side: 'me', text: '팀장님, A건 보고서 초안 정리했습니다.' },
+      { side: 'other', text: '잘 봤어.' },
+      { side: 'other', text: '근데 이거 언제까지 가능해? 클라이언트에서 빨리 답변 달라고 하는데', highlighted: true }
+    ]
+  },
+  friend_subtext: {
+    relation: 'friend', name: '민호', avatar: '민', color: '#22c55e',
+    lastMsg: 'ㅋㅋ 괜찮아. 토요일이나 가도 됐는데 다음 주에 보자',
+    conversation: [
+      { side: 'me', text: '야 이번 주 토요일에 한강 가자' },
+      { side: 'other', text: '아 나 이번 주 프로젝트 야근 좀 할 것 같아 ㅠ' },
+      { side: 'me', text: '아 그래? 힘들겠다 다음 주로 미루자!' },
+      { side: 'other', text: 'ㅋㅋ 괜찮아. 토요일이나 가도 됐는데 다음 주에 보자', highlighted: true }
+    ]
+  },
+  family_mom: {
+    relation: 'parent', name: '엄마', avatar: '엄', color: '#f59e0b',
+    lastMsg: '다음 주에 시간 되면 전화 한번 해줄래?',
+    conversation: [
+      { side: 'other', text: '민수야 엄마야 잘 지내고 있지?' },
+      { side: 'other', text: '요즘 날씨 추운데 건강 조심하고' },
+      { side: 'other', text: '다음 주에 시간 되면 전화 한번 해줄래?', highlighted: true }
+    ]
+  },
+  client_polite: {
+    relation: 'client', name: '김 과장님', avatar: '김', color: '#0ea5e9',
+    lastMsg: '확인해보겠습니다',
+    conversation: [
+      { side: 'me', text: '안녕하세요 과장님, 시안 검토 부탁드립니다.' },
+      { side: 'other', text: '네 잘 받았습니다' },
+      { side: 'other', text: '확인해보겠습니다', highlighted: true }
+    ]
+  }
+};
+
+const state = {
+  currentRelation: 'friend',
+  lastMsg: '',
+  lastResult: null,
+  editingIdx: null,
+  editingOriginal: '',
+  totalCalls: 0,
+  totalCostKRW: 0,
+  cacheHits: 0,
+  cacheMisses: 0
+};
+
+// Profile & Memory Store
+const ProfileStore = {
+  data: { overall: { samples: 0, formalityBias: 0 }, perRelation: {} },
+  init() {
+    try {
+      const stored = localStorage.getItem(PROFILE_KEY);
+      if (stored) this.data = JSON.parse(stored);
+    } catch(e) {}
+  },
+  save() { localStorage.setItem(PROFILE_KEY, JSON.stringify(this.data)); },
+  getRelation(rel) {
+    if (!this.data.perRelation[rel]) {
+      this.data.perRelation[rel] = { samples: 0, formalityBias: 0, preferredPhrases: {}, avoidedPhrases: {} };
+    }
+    return this.data.perRelation[rel];
+  },
+  getPromptContext(rel) {
+    const rp = this.getRelation(rel);
+    if (rp.samples < 2) return '';
+    const phrases = Object.entries(rp.preferredPhrases).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([w])=>`"${w}"`).join(', ');
+    const tone = rp.formalityBias > 0.3 ? '정중한 격식체' : rp.formalityBias < -0.3 ? '친근한 구어체' : '자연스러운 균형 톤';
+    return `\n\n[사용자 개인화 스타일 - 이 관계에서 학습됨]\n- 선호 문체: ${tone}\n${phrases ? `- 자주 쓰는 표현: ${phrases}\n` : ''}(위 표현 스타일을 답장에 자연스럽게 반영할 것)`;
+  },
+  update(rel, orig, edited, diff) {
+    this.data.overall.samples++;
+    const decay = 0.85;
+    const shift = computeFormalityShift(orig, edited);
+    this.data.overall.formalityBias = this.data.overall.formalityBias * decay + shift * (1 - decay);
+
+    const rp = this.getRelation(rel);
+    rp.samples++;
+    rp.formalityBias = rp.formalityBias * decay + shift * (1 - decay);
+    diff.added.forEach(w => { if (w.length >= 2 && w.length <= 8) rp.preferredPhrases[w] = (rp.preferredPhrases[w] || 0) + 1; });
+    diff.removed.forEach(w => { if (w.length >= 2 && w.length <= 8) rp.avoidedPhrases[w] = (rp.avoidedPhrases[w] || 0) + 1; });
+    this.save();
+  }
+};
+
+// LCS Diff Helpers
+function tokenize(text) {
+  const r = []; let b = '';
+  for (const ch of text) {
+    if (/[\s,.!?~\-ㅋㅎㅠㅜ]/.test(ch)) { if (b) { r.push(b); b=''; } r.push(ch); }
+    else b += ch;
+  }
+  if (b) r.push(b);
+  return r;
+}
+function computeDiff(orig, edit) {
+  const a = tokenize(orig), b = tokenize(edit);
+  const m = a.length, n = b.length;
+  const t = Array(m+1).fill(null).map(() => Array(n+1).fill(0));
+  for (let i=1; i<=m; i++) for (let j=1; j<=n; j++) {
+    t[i][j] = (a[i-1] === b[j-1]) ? t[i-1][j-1] + 1 : Math.max(t[i-1][j], t[i][j-1]);
+  }
+  let i = m, j = n;
+  const added = [], removed = [];
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && a[i-1] === b[j-1]) { i--; j--; }
+    else if (j > 0 && (i === 0 || t[i][j-1] >= t[i-1][j])) { added.push(b[j-1]); j--; }
+    else if (i > 0) { removed.push(a[i-1]); i--; }
+  }
+  return { added: added.reverse(), removed: removed.reverse() };
+}
+function computeFormalityShift(orig, edit) {
+  const f = t => (t.match(/습니다|드립니다|바랍니다|하십시오/g) || []).length;
+  const c = t => (t.match(/해요|에요|드려요|ㅋㅋ|ㅎㅎ|ㅠ/g) || []).length;
+  return Math.max(-1, Math.min(1, ((f(edit) - f(orig)) - (c(edit) - c(orig))) / 3));
+}
+
+// Multi-Model API Call
+async function callOpenAI(model, systemPrompt, userPrompt) {
+  const key = localStorage.getItem(KEY_STORAGE);
+  if (!key) throw new Error('API 키가 설정되지 않았습니다.');
+
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+      temperature: 0.7,
+      response_format: { type: 'json_object' }
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(()=>({}));
+    throw new Error(err.error?.message || `API Error ${res.status}`);
+  }
+  const data = await res.json();
+  state.totalCalls++;
+  const usage = data.usage || {};
+  const inP = (model === 'gpt-4o') ? 2.5 : 0.15;
+  const outP = (model === 'gpt-4o') ? 10.0 : 0.60;
+  const costKRW = Math.round(((usage.prompt_tokens||0)*inP + (usage.completion_tokens||0)*outP) / 1000000 * 1350);
+  state.totalCostKRW += costKRW;
+  return { content: JSON.parse(data.choices[0].message.content), costKRW };
+}
+
+// Pipeline Generation
+async function executePipeline(relation, lastMsg, contextText) {
+  const cacheKey = `c_${relation}_${lastMsg.trim().slice(0,60)}`;
+  const cached = localStorage.getItem(cacheKey);
+  if (cached) {
+    state.cacheHits++;
+    const res = JSON.parse(cached);
+    renderResults(res, 0, true);
+    saveStats();
+    toast('💾 24h 캐시 적중! (0원 즉시 응답)');
+    return;
+  }
+
+  state.cacheMisses++;
+  toast('⚡ Multi-Model 파이프라인 분석 시작...');
+  const promptCtx = ProfileStore.getPromptContext(relation);
+
+  // Layer 1: Intent Analysis (GPT-4o-mini)
+  const intentPrompt = `너는 고맥락 한국어 메신저 분석가다. [상대방 메시지 + 맥락]을 분석하여 다음 JSON으로 출력하라:
+{"intent": "상대의 진짜 의도 1줄", "emotion": "표정 이면의 감정", "subtext": "숨겨진 결핍/욕구", "whatTheyWant": "나에게 바라는 것", "strategy": "추천 대응 톤", "redFlags": ["피해야 할 표현 1~2개"]}`;
+  const intentRes = await callOpenAI('gpt-4o-mini', intentPrompt, `상대방 메시지: "${lastMsg}"\n맥락: ${contextText}\n관계: ${relation}`);
+
+  // Layer 2: 3 Drafts (GPT-4o-mini)
+  const draftPrompt = `너는 한국어 메신저 답장 생성기다. 1~2줄의 압축된 한국어 답장 3개를 JSON으로 생성하라.
+각 후보는 격식(formal), 캐주얼(casual), 따뜻(warm) 톤으로 구성할 것.
+${promptCtx}
+출력 형식: {"candidates": [{"tier":"basic|thoughtful", "tone":"격식|캐주얼|따뜻", "text":"답장 문구", "rationale":"이유 1줄"}]}`;
+  const draftRes = await callOpenAI('gpt-4o-mini', draftPrompt, `상대방: "${lastMsg}"\n의도분석: ${JSON.stringify(intentRes.content)}\n관계: ${relation}`);
+
+  // Layer 3: ⚡ Wow Point (GPT-4o Premium)
+  const wowPrompt = `너는 커뮤니케이션 전략 코치다. 상대의 숨은 결핍이나 불안을 먼저 해소하며 주도권을 갖는 "사용자가 미처 생각 못한 한 수 앞선 Wow Point 답장" 1개를 생성하라.
+1~2줄 압축 한국어 문장.
+${promptCtx}
+출력 형식: {"wow_point": {"tier":"wow", "tone":"전략", "text":"전략 답장", "rationale":"왜 Wow Point인지", "wow_detail":"사회심리학적/한국 문화 맥락"}}`;
+  const wowRes = await callOpenAI('gpt-4o', wowPrompt, `상대방: "${lastMsg}"\n의도분석: ${JSON.stringify(intentRes.content)}\n기존후보: ${JSON.stringify(draftRes.content)}`);
+
+  const combined = {
+    analysis: intentRes.content,
+    candidates: [...(draftRes.content.candidates || []), { ...wowRes.content.wow_point, tier: 'wow' }]
+  };
+
+  try { localStorage.setItem(cacheKey, JSON.stringify(combined)); } catch(e){}
+  const totalCost = intentRes.costKRW + draftRes.costKRW + wowRes.costKRW;
+  renderResults(combined, totalCost, false);
+  saveStats();
+}
+
+function renderResults(res, cost, isCached) {
+  state.lastResult = res;
+
+  // Render cost tracker
+  const ct = document.getElementById('cost-tracker');
+  ct.style.display = 'grid';
+  const totalCalls = state.cacheHits + state.cacheMisses;
+  const hitRate = totalCalls === 0 ? 0 : Math.round((state.cacheHits / totalCalls) * 100);
+  ct.innerHTML = `
+    <div class="cost-item"><div class="v">₩${cost}</div><div class="l">이번 세션</div></div>
+    <div class="cost-item"><div class="v">₩${state.totalCostKRW}</div><div class="l">누적 비용</div></div>
+    <div class="cost-item"><div class="v">${hitRate}%</div><div class="l">캐시 적중</div></div>
+    <div class="cost-item"><div class="v">${state.totalCalls}회</div><div class="l">총 호출</div></div>
+  `;
+
+  // Render Analysis
+  const as = document.getElementById('analysis-section');
+  as.style.display = 'block';
+  const a = res.analysis;
+  as.innerHTML = `
+    <div class="analysis">
+      <div class="head">
+        <div class="ico">AI</div>
+        <div><div style="font-size:13.5px;font-weight:700;">의도 및 서브텍스트 분석</div><div style="font-size:11px;color:var(--text-mute);">상대방의 숨겨진 욕구를 읽어냈습니다</div></div>
+      </div>
+      <div class="analysis-row"><div class="label">표면 의도</div><div>${escapeHtml(a.intent)}</div></div>
+      <div class="analysis-row"><div class="label">서브텍스트</div><div style="color:var(--accent-2);font-weight:600;">"${escapeHtml(a.subtext)}"</div></div>
+      <div class="analysis-row"><div class="label">추천 전략</div><div>${escapeHtml(a.strategy)}</div></div>
+      ${a.redFlags && a.redFlags.length ? `<div class="analysis-row"><div class="label" style="color:var(--bad);">⚠️ 회피</div><div style="color:var(--bad);">${a.redFlags.map(r=>'· '+escapeHtml(r)).join(' ')}</div></div>` : ''}
+    </div>
+  `;
+
+  // Render Suggestions
+  const ss = document.getElementById('suggestions-section');
+  ss.style.display = 'block';
+  ss.innerHTML = `
+    <div class="suggestion-section">
+      <div style="font-size:12px;font-weight:700;color:var(--text-dim);margin-bottom:10px;text-transform:uppercase;">💬 추천 답장 후보 (클릭 시 복사 / 수정)</div>
+      ${res.candidates.map((c, i) => {
+        const isWow = c.tier === 'wow';
+        return `
+          <div class="suggestion-card ${isWow ? 'wow' : ''}" onclick="copyCandidate(${i})">
+            <div class="head">
+              <div class="meta">
+                <span class="tier-badge ${isWow ? 'wow' : (c.tier==='thoughtful'?'thoughtful':'basic')}">${isWow ? '⚡ Wow Point' : (c.tone || '추천')}</span>
+                <span class="model-tag ${isWow ? 'premium' : ''}">${isWow ? 'GPT-4o' : 'GPT-4o-mini'}</span>
+              </div>
+              <div style="display:flex;gap:4px;">
+                <button class="icon-btn" onclick="event.stopPropagation(); openEditModal(${i})" title="수정 및 학습">✏️</button>
+                <button class="icon-btn" onclick="event.stopPropagation(); copyCandidate(${i})" title="클립보드 복사">📋</button>
+              </div>
+            </div>
+            <div class="text">${escapeHtml(c.text)}</div>
+            ${c.rationale ? `<div class="why"><b>💡</b> ${escapeHtml(c.rationale)}</div>` : ''}
+            ${c.wow_detail ? `<div class="why" style="margin-top:4px;color:var(--wow);"><b>⚡</b> ${escapeHtml(c.wow_detail)}</div>` : ''}
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+// User Actions
+async function generateCustom() {
+  const lastMsg = document.getElementById('custom-last-msg').value.trim();
+  if (!lastMsg) { toast('상대방 메시지를 입력해주세요!'); return; }
+  const rel = document.getElementById('custom-relation').value;
+  const intent = document.getElementById('custom-my-intent').value.trim();
+  const context = intent ? `사용자 희망 의도: ${intent}` : '자유 대화';
+  state.currentRelation = rel;
+  state.lastMsg = lastMsg;
+  document.getElementById('custom-gen-btn').disabled = true;
+  try {
+    await executePipeline(rel, lastMsg, context);
+  } catch(e) {
+    alert(e.message);
+  } finally {
+    document.getElementById('custom-gen-btn').disabled = false;
+  }
+}
+
+async function generatePreset() {
+  const p = PRESET_SCENARIOS[state.currentPresetId];
+  if (!p) return;
+  state.currentRelation = p.relation;
+  state.lastMsg = p.lastMsg;
+  const context = p.conversation.map(c=>`${c.side==='me'?'나':'상대'}: ${c.text}`).join('\n');
+  try {
+    await executePipeline(p.relation, p.lastMsg, context);
+  } catch(e) {
+    alert(e.message);
+  }
+}
+
+function selectPreset(id) {
+  state.currentPresetId = id;
+  const p = PRESET_SCENARIOS[id];
+  document.getElementById('p-avatar').textContent = p.avatar;
+  document.getElementById('p-avatar').style.background = p.color;
+  document.getElementById('p-name').textContent = p.name;
+  document.getElementById('p-conv').innerHTML = p.conversation.map(c => `
+    <div class="chat-row ${c.side}">
+      <div class="bubble ${c.highlighted ? 'highlighted' : ''}">${escapeHtml(c.text)}</div>
+    </div>
+  `).join('');
+  document.getElementById('preset-phone-wrap').style.display = 'block';
+}
+
+function setMode(mode) {
+  document.getElementById('tab-custom').classList.toggle('active', mode === 'custom');
+  document.getElementById('tab-preset').classList.toggle('active', mode === 'preset');
+  document.getElementById('mode-custom-view').style.display = (mode === 'custom') ? 'block' : 'none';
+  document.getElementById('mode-preset-view').style.display = (mode === 'preset') ? 'block' : 'none';
+  document.getElementById('preset-phone-wrap').style.display = 'none';
+}
+
+function copyCandidate(idx) {
+  const text = state.lastResult.candidates[idx].text;
+  navigator.clipboard.writeText(text).then(() => toast('📋 복사 완료! 메신저에 붙여넣으세요'));
+}
+
+function openEditModal(idx) {
+  state.editingIdx = idx;
+  state.editingOriginal = state.lastResult.candidates[idx].text;
+  document.getElementById('edit-textarea').value = state.editingOriginal;
+  document.getElementById('diff-output').textContent = '변경 사항이 없습니다.';
+  document.getElementById('edit-modal').classList.add('show');
+  document.getElementById('edit-textarea').oninput = onEditInput;
+}
+function onEditInput() {
+  const cur = document.getElementById('edit-textarea').value;
+  const diff = computeDiff(state.editingOriginal, cur);
+  let html = '';
+  if (diff.added.length) html += `<div><span style="color:var(--good);font-weight:700;">➕ 추가:</span> ` + diff.added.map(w=>`<span class="diff-add">${escapeHtml(w)}</span>`).join(' ') + `</div>`;
+  if (diff.removed.length) html += `<div><span style="color:var(--bad);font-weight:700;">➖ 삭제:</span> ` + diff.removed.map(w=>`<span class="diff-remove">${escapeHtml(w)}</span>`).join(' ') + `</div>`;
+  document.getElementById('diff-output').innerHTML = html || '변경 사항이 없습니다.';
+}
+function closeEditModal() { document.getElementById('edit-modal').classList.remove('show'); }
+function saveEditAndLearn() {
+  const edited = document.getElementById('edit-textarea').value.trim();
+  if (edited && edited !== state.editingOriginal) {
+    const diff = computeDiff(state.editingOriginal, edited);
+    ProfileStore.update(state.currentRelation, state.editingOriginal, edited, diff);
+    state.lastResult.candidates[state.editingIdx].text = edited;
+    renderResults(state.lastResult, 0, false);
+    toast('🧠 수정 스타일이 프로필에 학습되었습니다!');
+  }
+  closeEditModal();
+}
+
+function pasteClipboard(targetId) {
+  navigator.clipboard.readText().then(t => {
+    document.getElementById(targetId).value = t;
+    toast('📋 붙여넣기 완료');
+  }).catch(() => toast('클립보드 접근 권한이 필요합니다.'));
+}
+
+// Stats & Profile UI
+function renderProfile() {
+  document.getElementById('p-total-samples').textContent = ProfileStore.data.overall.samples;
+  document.getElementById('p-total-calls').textContent = state.totalCalls;
+  document.getElementById('p-total-cost').textContent = `₩${state.totalCostKRW}`;
+
+  const rels = ['boss', 'client', 'senior', 'colleague', 'junior', 'professor', 'school', 'romantic', 'parent', 'sibling', 'friend'];
+  const labels = {
+    boss:'상사', client:'클라이언트', senior:'선배', colleague:'동료', junior:'후배',
+    professor:'교수님', school:'학교친구', romantic:'연인', parent:'부모님', sibling:'형제', friend:'친구'
+  };
+
+  let html = '';
+  for (const r of rels) {
+    const rp = ProfileStore.getRelation(r);
+    const formalPct = Math.round(50 + (rp.formalityBias || 0) * 30);
+    const phrases = Object.entries(rp.preferredPhrases || {}).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    html += `
+      <div class="relation-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:13.5px;font-weight:700;">${labels[r]} (${rp.samples}회 학습)</span>
+          <span style="font-size:11px;color:var(--text-mute);">${formalPct}% 격식도</span>
+        </div>
+        <div style="height:6px;background:var(--bg-elev);border-radius:3px;overflow:hidden;margin-bottom:6px;">
+          <div style="width:${formalPct}%;height:100%;background:var(--grad-cool);"></div>
+        </div>
+        <div>${phrases.length ? phrases.map(([w,c])=>`<span class="phrase">"${escapeHtml(w)}" ×${c}</span>`).join('') : '<span style="font-size:11px;color:var(--text-mute);">아직 학습된 맞춤 표현 없음</span>'}</div>
+      </div>
+    `;
+  }
+  document.getElementById('profile-relations-list').innerHTML = html;
+}
+
+function exportProfile() {
+  const json = JSON.stringify(ProfileStore.data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `wsir_profile_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+function importProfile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      ProfileStore.data = JSON.parse(ev.target.result);
+      ProfileStore.save();
+      renderProfile();
+      toast('📂 프로필 복원 완료');
+    } catch(err) { alert('유효하지 않은 프로필 파일입니다.'); }
+  };
+  reader.readAsText(file);
+}
+function resetProfile() {
+  if (confirm('모든 맞춤 학습 데이터를 초기화하시겠습니까?')) {
+    ProfileStore.data = { overall: { samples: 0, formalityBias: 0 }, perRelation: {} };
+    ProfileStore.save();
+    renderProfile();
+    toast('초기화 완료');
+  }
+}
+function resetKey() {
+  if (confirm('API 키를 삭제하시겠습니까?')) {
+    localStorage.removeItem(KEY_STORAGE);
+    location.reload();
+  }
+}
+
+function saveKey() {
+  const k = document.getElementById('api-key-input').value.trim();
+  if (!k.startsWith('sk-')) { alert('유효한 OpenAI API 키(sk-...)를 입력해주세요.'); return; }
+  localStorage.setItem(KEY_STORAGE, k);
+  enterApp();
+}
+
+function enterApp() {
+  document.getElementById('screen-setup').classList.remove('active');
+  document.getElementById('screen-main').classList.add('active');
+  loadStats();
+  renderProfile();
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`screen-${tab}`).classList.add('active');
+  document.getElementById('btn-nav-main').classList.toggle('active', tab === 'main');
+  document.getElementById('btn-nav-profile').classList.toggle('active', tab === 'profile');
+  if (tab === 'profile') renderProfile();
+}
+
+function loadStats() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STATS_KEY) || '{}');
+    state.totalCalls = s.totalCalls || 0;
+    state.totalCostKRW = s.totalCostKRW || 0;
+    state.cacheHits = s.cacheHits || 0;
+    state.cacheMisses = s.cacheMisses || 0;
+  } catch(e) {}
+}
+function saveStats() {
+  localStorage.setItem(STATS_KEY, JSON.stringify({
+    totalCalls: state.totalCalls, totalCostKRW: state.totalCostKRW,
+    cacheHits: state.cacheHits, cacheMisses: state.cacheMisses
+  }));
+}
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2200);
+}
+function escapeHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Init
+ProfileStore.init();
+loadStats();
+if (localStorage.getItem(KEY_STORAGE)) {
+  enterApp();
+} else {
+  document.getElementById('screen-setup').classList.add('active');
+}
+</script>
+</body>
+</html>
