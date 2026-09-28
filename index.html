@@ -399,7 +399,7 @@
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <span style="font-size:14px; font-weight:800; color:var(--text);">📸 카톡/메신저 캡처 스크린샷 분석</span>
-          <span style="font-size:10.5px; padding:3px 8px; border-radius:6px; background:rgba(78,224,203,0.15); color:var(--accent-2); font-weight:700; border:1px solid rgba(78,224,203,0.3);">Gemini 2.5 Vision</span>
+          <span style="font-size:10.5px; padding:3px 8px; border-radius:6px; background:rgba(78,224,203,0.15); color:var(--accent-2); font-weight:700; border:1px solid rgba(78,224,203,0.3);">Gemini 3.8 Vision</span>
         </div>
         <p style="font-size:12px; color:var(--text-dim); margin-bottom:14px; line-height:1.5;">
           대화를 일일이 복사할 필요 없이 캡처 1장만 올리세요. <b>답장 간격(시간차)</b>, <b>카톡 '1' 유무</b>, <b>상대방 프로필 뉘앙스</b>까지 한 번에 시각적으로 판독합니다.
@@ -579,7 +579,7 @@
       <input type="password" id="api-key-input" placeholder="AIzaSy..." autocomplete="off" />
     </div>
     <div style="font-size:11.5px; color:var(--text-mute); margin-bottom:14px;">
-      키를 등록하면 최신 <b>Gemini 2.5 Flash</b> 공식 엔진으로 실시간 분석되며, 비워둘 경우 내장된 5대 시나리오 시뮬레이션 모드로 작동합니다.
+      키를 등록하면 최신 <b>Gemini 3.8 Flash</b> 공식 엔진으로 실시간 분석되며, 비워둘 경우 내장된 5대 시나리오 시뮬레이션 모드로 작동합니다.
     </div>
     <div style="display:flex; gap:8px;">
       <button class="cta secondary" style="flex:1;" onclick="closeKeyModal()">닫기</button>
@@ -922,64 +922,77 @@ function computeFormalityShift(orig, edit) {
 }
 
 
-// Google Gemini 2.5 Flash Vision Multimodal Call
+// Google Gemini 3.8 Flash Vision Multimodal Call
 async function callGeminiVision(base64Data, mimeType, systemPrompt, userPrompt) {
   const key = localStorage.getItem(KEY_STORAGE);
   if (!key) throw new Error('Google Gemini API 키가 설정되지 않았습니다.');
 
-  const model = 'gemini-2.5-flash';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+  const models = ['gemini-3.8-flash', 'gemini-2.5-flash'];
+  let lastError = null;
   const cleanBase64 = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
 
-  const payload = {
-    systemInstruction: {
-      parts: [{ text: systemPrompt }]
-    },
-    contents: [
-      {
-        role: 'user',
-        parts: [
+  for (const model of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+      const payload = {
+        systemInstruction: {
+          parts: [{ text: systemPrompt }]
+        },
+        contents: [
           {
-            inlineData: {
-              mimeType: mimeType || 'image/jpeg',
-              data: cleanBase64
-            }
-          },
-          { text: userPrompt }
-        ]
+            role: 'user',
+            parts: [
+              {
+                inlineData: {
+                  mimeType: mimeType || 'image/jpeg',
+                  data: cleanBase64
+                }
+              },
+              { text: userPrompt }
+            ]
+          }
+        ],
+        generationConfig: {
+          responseMimeType: 'application/json'
+        }
+      };
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        const errMsg = err.error?.message || `Gemini Vision 분석 오류 (${res.status})`;
+        if (res.status === 400 || res.status === 403 || res.status === 429) {
+          throw new Error(errMsg);
+        }
+        lastError = new Error(errMsg);
+        continue;
       }
-    ],
-    generationConfig: {
-      temperature: 0.7,
-      responseMimeType: 'application/json'
+
+      const data = await res.json();
+      state.totalCalls++;
+
+      const usage = data.usageMetadata || {};
+      const inTokens = usage.promptTokenCount || 0;
+      const outTokens = usage.candidatesTokenCount || 0;
+      // Gemini 3.8 Flash 단가: Input $0.75/1M, Output $3.75/1M (Free Tier ₩0)
+      const costKRW = Math.round(((inTokens * 0.75 + outTokens * 3.75) / 1000000) * 1350);
+      state.totalCostKRW += costKRW;
+
+      let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+      return { content: JSON.parse(rawText), costKRW, modelUsed: model };
+    } catch(e) {
+      lastError = e;
+      if (e.message.includes('API 키') || e.message.includes('사용량') || e.message.includes('429')) throw e;
     }
-  };
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    const errMsg = err.error?.message || `Gemini Vision 분석 오류 (${res.status})`;
-    throw new Error(errMsg);
   }
-
-  const data = await res.json();
-  state.totalCalls++;
-
-  const usage = data.usageMetadata || {};
-  const inTokens = usage.promptTokenCount || 0;
-  const outTokens = usage.candidatesTokenCount || 0;
-  const costKRW = Math.round(((inTokens * 0.30 + outTokens * 2.50) / 1000000) * 1350);
-  state.totalCostKRW += costKRW;
-
-  let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-  rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-
-  return { content: JSON.parse(rawText), costKRW, modelUsed: model };
+  throw lastError || new Error('Gemini Vision API 호출에 실패했습니다.');
 }
 
 let currentVisionBase64 = null;
@@ -1048,7 +1061,7 @@ async function handleGenerateVision() {
   }
 
   // Real Gemini Vision Pipeline
-  toast('⚡ Gemini 2.5 Flash Vision이 캡처 화면을 시각 판독 중...');
+  toast('⚡ Gemini 3.8 Flash Vision이 캡처 화면을 시각 판독 중...');
   try {
     const promptCtx = ProfileStore.getPromptContext(rel === 'auto' ? 'friend' : rel);
     const systemPrompt = `너는 세계 최고 수준의 고맥락 한국어 메신저 분석기 "WsIr Vision Engine"이다.
@@ -1101,7 +1114,8 @@ async function callGemini(systemPrompt, userPrompt) {
   const key = localStorage.getItem(KEY_STORAGE);
   if (!key) throw new Error('Google Gemini API 키가 설정되지 않았습니다.');
 
-  const models = ['gemini-2.5-flash', 'gemini-2.0-flash'];
+  // Standard GA: gemini-3.8-flash (Primary), fallback: gemini-2.5-flash (GA Fallback Architecture)
+  const models = ['gemini-3.8-flash', 'gemini-2.5-flash'];
   let lastError = null;
 
   for (const model of models) {
@@ -1118,7 +1132,6 @@ async function callGemini(systemPrompt, userPrompt) {
           }
         ],
         generationConfig: {
-          temperature: 0.7,
           responseMimeType: 'application/json'
         }
       };
@@ -1147,8 +1160,8 @@ async function callGemini(systemPrompt, userPrompt) {
       const usage = data.usageMetadata || {};
       const inTokens = usage.promptTokenCount || 0;
       const outTokens = usage.candidatesTokenCount || 0;
-      // Gemini 2.5 Flash: Input $0.30/1M, Output $2.50/1M (환율 1,350원 기준 유료 환산치)
-      const costKRW = Math.round(((inTokens * 0.30 + outTokens * 2.50) / 1000000) * 1350);
+      // Gemini 3.8 Flash 단가: Input $0.75/1M, Output $3.75/1M (Free Tier ₩0)
+      const costKRW = Math.round(((inTokens * 0.75 + outTokens * 3.75) / 1000000) * 1350);
       state.totalCostKRW += costKRW;
 
       let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
@@ -1205,7 +1218,7 @@ async function executePipeline(relation, lastMsg, contextText) {
   }
 
   // Real Google Gemini LLM Pipeline (BYOK)
-  toast('⚡ Google Gemini 2.5 Flash 실시간 분석 중...');
+  toast('⚡ Google Gemini 3.8 Flash 실시간 분석 중...');
   const promptCtx = ProfileStore.getPromptContext(relation);
 
   const systemPrompt = `너는 고맥락 한국어 메신저 분석 및 답장 코-파일럿 "WsIr Engine"이다.
@@ -1271,7 +1284,7 @@ ${contextText}
   try { localStorage.setItem(cacheKey, JSON.stringify(combined)); } catch(e){}
   renderResults(combined, geminiRes.costKRW, false);
   saveStats();
-  toast('✨ Gemini 2.5 Flash 답장 추천 완료!');
+  toast('✨ Gemini 3.8 Flash 답장 추천 완료!');
 }
 
 function renderResults(res, cost, isCached) {
@@ -1325,7 +1338,7 @@ function renderResults(res, cost, isCached) {
             <div class="head">
               <div class="meta">
                 <span class="tier-badge ${isWow ? 'wow' : (c.tier==='thoughtful'?'thoughtful':'basic')}">${isWow ? '⚡ Wow Point' : (c.tone || '추천')}</span>
-                <span class="model-tag ${isWow ? 'premium' : ''}">${isWow ? 'Gemini 2.5 Flash (Thinking)' : 'Gemini 2.5 Flash'}</span>
+                <span class="model-tag ${isWow ? 'premium' : ''}">${isWow ? 'Gemini 3.8 Flash (Thinking)' : 'Gemini 3.8 Flash'}</span>
               </div>
               <div class="feedback-group">
                 <button class="fb-btn ${c.rated==='up'?'active':''}" onclick="event.stopPropagation(); rateCandidate(${i}, true)" title="딱 내 스타일이에요 👍">👍</button>
@@ -1571,7 +1584,7 @@ function updateModeIndicator() {
   const hasKey = !!localStorage.getItem(KEY_STORAGE);
   if (hasKey) {
     ind.className = 'badge-mode real';
-    ind.textContent = '⚡ Gemini 2.5';
+    ind.textContent = '⚡ Gemini 3.8';
   } else {
     ind.className = 'badge-mode demo';
     ind.textContent = '⚡ 체험 모드';
