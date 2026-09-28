@@ -578,8 +578,20 @@
       <label style="font-size:12px; font-weight:700; color:var(--text-dim); margin-bottom:4px; display:block;">Gemini API Key</label>
       <input type="password" id="api-key-input" placeholder="AIzaSy..." autocomplete="off" />
     </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label style="font-size:12px; font-weight:700; color:var(--text-dim); margin-bottom:4px; display:block;">엔진 모델 선택</label>
+      <select id="model-select" style="width:100%; padding:9px 12px; background:var(--bg-elev); border:1px solid var(--line); border-radius:10px; color:var(--text); font-size:12.5px; outline:none;">
+        <option value="auto">⚡ 스마트 자동 폴백 (3.8 Flash 우선 + 서버 혼잡 시 2.5 Lite 자동 전환 / 권장)</option>
+        <option value="gemini-3.8-flash">🧠 Gemini 3.8 Flash (최신 최고 지능 Thinking)</option>
+        <option value="gemini-2.5-flash-lite">🚀 Gemini 2.5 Flash-Lite (초고속 / 서버 혼잡 프리)</option>
+        <option value="gemini-2.5-flash">⚡ Gemini 2.5 Flash (표준)</option>
+      </select>
+      <div style="font-size:11px; color:var(--text-mute); margin-top:4px; line-height:1.4;">
+        ※ '스마트 자동 폴백' 선택 시, 구글 특정 모델에 일시적 트래픽 급증(503)이 발생해도 다른 안정적인 모델로 지연 없이 즉시 전환됩니다.
+      </div>
+    </div>
     <div style="font-size:11.5px; color:var(--text-mute); margin-bottom:14px;">
-      키를 등록하면 최신 <b>Gemini 3.8 Flash</b> 공식 엔진으로 실시간 분석되며, 비워둘 경우 내장된 5대 시나리오 시뮬레이션 모드로 작동합니다.
+      키를 등록하면 구글 Gemini 공식 엔진으로 실시간 분석되며, 비워둘 경우 내장된 5대 시나리오 시뮬레이션 모드로 작동합니다.
     </div>
     <div style="display:flex; gap:8px;">
       <button class="cta secondary" style="flex:1;" onclick="closeKeyModal()">닫기</button>
@@ -646,6 +658,7 @@
 <script>
 // Storage Keys
 const KEY_STORAGE = 'wsir_gemini_key';
+const MODEL_PREF_KEY = 'wsir_model_pref';
 const PROFILE_KEY = 'wsir_profile_v5';
 const STATS_KEY = 'wsir_stats_v5';
 
@@ -1001,13 +1014,64 @@ function extractTextFromGemini(data) {
   return '';
 }
 
-// Token & KRW Cost Calculator (Gemini 3.8 Flash GA Pricing: Input $0.75/1M, Output $3.75/1M, Free Tier ₩0)
-function extractTokenUsage(data) {
+// Candidate Models Resolution based on User Preference
+function getCandidateModels() {
+  const pref = localStorage.getItem(MODEL_PREF_KEY) || 'auto';
+  if (pref === 'gemini-3.8-flash') {
+    return ['gemini-3.8-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-flash'];
+  }
+  if (pref === 'gemini-2.5-flash-lite') {
+    return ['gemini-2.5-flash-lite', 'gemini-3.8-flash', 'gemini-2.5-flash'];
+  }
+  if (pref === 'gemini-2.5-flash') {
+    return ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-3.8-flash'];
+  }
+  // Default 'auto' cascade: 3.8 Flash -> 2.5 Flash-Lite -> 2.5 Flash -> 1.5 Flash
+  return ['gemini-3.8-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-1.5-flash'];
+}
+
+// Token & KRW Cost Calculator based on specific model rates
+function extractTokenUsage(data, modelName = 'gemini-3.8-flash') {
   const usage = data.usage || data.usageMetadata || {};
   const inTokens = usage.total_input_tokens || usage.promptTokenCount || 0;
   const outTokens = usage.total_output_tokens || usage.candidatesTokenCount || 0;
-  const costKRW = Math.round(((inTokens * 0.75 + outTokens * 3.75) / 1000000) * 1350);
+  let inRate = 0.75, outRate = 3.75;
+  if (modelName.includes('lite') || modelName.includes('1.5') || modelName.includes('2.5')) {
+    inRate = 0.075;
+    outRate = 0.30;
+  }
+  const costKRW = Math.round(((inTokens * inRate + outTokens * outRate) / 1000000) * 1350);
   return { inTokens, outTokens, costKRW };
+}
+
+// Resilient Fetch with Exponential Backoff + Jitter for 503 (High Demand) & 429
+async function fetchWithBackoff(url, options, maxRetries = 2, desc = '') {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const res = await fetch(url, options);
+      if (res.status === 503 || res.status === 429) {
+        const errJson = await res.clone().json().catch(() => ({}));
+        const errMsg = errJson.error?.message || '';
+        // If permanent quota/billing depletion, exit immediately
+        if (errMsg.toLowerCase().includes('quota') || errMsg.toLowerCase().includes('daily') || errMsg.toLowerCase().includes('prepayment') || errMsg.toLowerCase().includes('depleted')) {
+          return res;
+        }
+        if (attempt < maxRetries) {
+          const delay = Math.round(1100 * Math.pow(1.8, attempt) + Math.random() * 400);
+          toast(`⏳ ${desc || '서버 일시 혼잡(503)'}: ${Math.round(delay / 100) / 10}초 후 자동 재시도 (${attempt + 1}/${maxRetries})...`);
+          await new Promise(r => setTimeout(r, delay));
+          continue;
+        }
+      }
+      return res;
+    } catch (netErr) {
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, 1000));
+        continue;
+      }
+      throw netErr;
+    }
+  }
 }
 
 // Resilient JSON Parser (handles markdown code fences and reasoning traces)
@@ -1025,79 +1089,79 @@ function safeJsonParse(rawText) {
   }
 }
 
-// Google Gemini 3.8 Flash Vision Multimodal Call (Interactions API Standard)
+// Google Gemini Vision Multimodal Call with Auto Cascade & Backoff
 async function callGeminiVision(base64Data, mimeType, systemPrompt, userPrompt) {
   const key = localStorage.getItem(KEY_STORAGE);
   if (!key) throw new Error('Google Gemini API 키가 설정되지 않았습니다.');
 
   const cleanBase64 = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
+  const candidateModels = getCandidateModels();
   let lastError = null;
 
-  // 1. Primary: Google Interactions API (Default Standard since June 2026)
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/interactions?key=${encodeURIComponent(key)}`;
-    const payload = {
-      model: 'gemini-3.8-flash',
-      system_instruction: systemPrompt,
-      input: [
-        {
-          type: 'text',
-          text: userPrompt
-        },
-        {
-          type: 'image',
-          data: cleanBase64,
-          mime_type: mimeType || 'image/jpeg'
-        }
-      ],
-      response_format: {
-        type: 'text',
-        mime_type: 'application/json'
-      },
-      store: false
-    };
+  for (const model of candidateModels) {
+    // 1. Interactions API (Supported on gemini-3.8-flash)
+    if (model === 'gemini-3.8-flash') {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/interactions?key=${encodeURIComponent(key)}`;
+        const payload = {
+          model: 'gemini-3.8-flash',
+          system_instruction: systemPrompt,
+          input: [
+            {
+              type: 'text',
+              text: userPrompt
+            },
+            {
+              type: 'image',
+              data: cleanBase64,
+              mime_type: mimeType || 'image/jpeg'
+            }
+          ],
+          response_format: {
+            type: 'text',
+            mime_type: 'application/json'
+          },
+          store: false
+        };
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': key
-      },
-      body: JSON.stringify(payload)
-    });
+        const res = await fetchWithBackoff(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': key
+          },
+          body: JSON.stringify(payload)
+        }, 1, 'Gemini 3.8 Flash Vision (Interactions)');
 
-    if (res.ok) {
-      const data = await res.json();
-      state.totalCalls++;
-      const { costKRW } = extractTokenUsage(data);
-      state.totalCostKRW += costKRW;
+        if (res.ok) {
+          const data = await res.json();
+          state.totalCalls++;
+          const { costKRW } = extractTokenUsage(data, 'gemini-3.8-flash');
+          state.totalCostKRW += costKRW;
 
-      const rawText = extractTextFromGemini(data);
-      const parsed = safeJsonParse(rawText);
-      return { content: parsed, costKRW, modelUsed: 'gemini-3.8-flash (Interactions API)' };
-    } else {
-      const err = await res.json().catch(() => ({}));
-      const errMsg = err.error?.message || `Interactions API Vision 오류 (${res.status})`;
-      if (res.status === 400 || res.status === 403) {
-        if (errMsg.toLowerCase().includes('prepayment') || errMsg.toLowerCase().includes('depleted') || errMsg.toLowerCase().includes('billing')) {
-          throw new Error(`[결제 소진] Google Cloud 선불 크레딧이 소진되었습니다: ${errMsg}`);
+          const rawText = extractTextFromGemini(data);
+          const parsed = safeJsonParse(rawText);
+          return { content: parsed, costKRW, modelUsed: 'gemini-3.8-flash (Interactions API Vision)' };
+        } else {
+          const err = await res.json().catch(() => ({}));
+          const errMsg = err.error?.message || `Interactions API Vision 오류 (${res.status})`;
+          if (res.status === 400 || res.status === 403) {
+            if (errMsg.toLowerCase().includes('prepayment') || errMsg.toLowerCase().includes('depleted') || errMsg.toLowerCase().includes('billing')) {
+              throw new Error(`[결제 소진] Google Cloud 선불 크레딧이 소진되었습니다: ${errMsg}`);
+            }
+            if (errMsg.toLowerCase().includes('key') || errMsg.toLowerCase().includes('permission') || res.status === 403) {
+              throw new Error(`API 키가 유효하지 않거나 권한이 없습니다: ${errMsg}`);
+            }
+          }
+          lastError = new Error(errMsg);
         }
-        if (errMsg.toLowerCase().includes('key') || errMsg.toLowerCase().includes('permission') || res.status === 403) {
-          throw new Error(`API 키가 유효하지 않거나 권한이 없습니다: ${errMsg}`);
-        }
-      } else if (res.status === 429) {
-        throw new Error(`무료 사용량(RPM/RPD)을 초과했습니다: ${errMsg}`);
+      } catch(e) {
+        if (e.message.includes('결제 소진') || e.message.includes('API 키')) throw e;
+        lastError = e;
       }
-      lastError = new Error(errMsg);
     }
-  } catch(e) {
-    if (e.message.includes('결제 소진') || e.message.includes('API 키') || e.message.includes('사용량') || e.message.includes('429')) throw e;
-    lastError = e;
-  }
 
-  // 2. Secondary Fallback: generateContent Multimodal (gemini-3.8-flash -> gemini-3.7-flash)
-  const fallbackModels = ['gemini-3.8-flash', 'gemini-3.7-flash'];
-  for (const model of fallbackModels) {
+    // 2. generateContent Multimodal endpoint
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
       const payload = {
@@ -1123,13 +1187,22 @@ async function callGeminiVision(base64Data, mimeType, systemPrompt, userPrompt) 
         }
       };
 
-      const res = await fetch(url, {
+      const res = await fetchWithBackoff(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
-      });
+      }, 1, `${model} Vision`);
 
-      if (!res.ok) {
+      if (res.ok) {
+        const data = await res.json();
+        state.totalCalls++;
+        const { costKRW } = extractTokenUsage(data, model);
+        state.totalCostKRW += costKRW;
+
+        const rawText = extractTextFromGemini(data);
+        const parsed = safeJsonParse(rawText);
+        return { content: parsed, costKRW, modelUsed: `${model} (generateContent Vision)` };
+      } else {
         const err = await res.json().catch(() => ({}));
         const errMsg = err.error?.message || `Gemini Vision 분석 오류 (${res.status})`;
         if (res.status === 400 || res.status === 403) {
@@ -1139,23 +1212,15 @@ async function callGeminiVision(base64Data, mimeType, systemPrompt, userPrompt) 
           if (errMsg.toLowerCase().includes('key') || errMsg.toLowerCase().includes('permission') || res.status === 403) {
             throw new Error(`API 키가 유효하지 않거나 권한이 없습니다: ${errMsg}`);
           }
-        } else if (res.status === 429) {
-          throw new Error(`무료 사용량 초과: ${errMsg}`);
+          if (errMsg.toLowerCase().includes('no longer available') || errMsg.toLowerCase().includes('not found') || res.status === 404) {
+            continue;
+          }
         }
         lastError = new Error(errMsg);
         continue;
       }
-
-      const data = await res.json();
-      state.totalCalls++;
-      const { costKRW } = extractTokenUsage(data);
-      state.totalCostKRW += costKRW;
-
-      const rawText = extractTextFromGemini(data);
-      const parsed = safeJsonParse(rawText);
-      return { content: parsed, costKRW, modelUsed: `${model} (generateContent Vision)` };
     } catch(e) {
-      if (e.message.includes('결제 소진') || e.message.includes('API 키') || e.message.includes('사용량') || e.message.includes('429')) throw e;
+      if (e.message.includes('결제 소진') || e.message.includes('API 키')) throw e;
       lastError = e;
     }
   }
@@ -1269,7 +1334,7 @@ ${promptCtx}`;
     state.lastMsg = '스크린샷 시각 분석 결과';
     renderResults(visionRes.content, visionRes.costKRW, false);
     saveStats();
-    toast('✨ 스크린샷 비전 답장 추천이 완료되었습니다!');
+    toast(`✨ ${visionRes.modelUsed || 'Gemini Vision'} 답장 추천 완료!`);
   } catch(e) {
     handlePipelineError(e);
   } finally {
@@ -1277,70 +1342,70 @@ ${promptCtx}`;
   }
 }
 
-// Google Gemini API Official Integration Call (Interactions API Standard)
+// Google Gemini API Official Integration Call with Auto Cascade & Backoff
 async function callGemini(systemPrompt, userPrompt) {
   const key = localStorage.getItem(KEY_STORAGE);
   if (!key) throw new Error('Google Gemini API 키가 설정되지 않았습니다.');
 
+  const candidateModels = getCandidateModels();
   let lastError = null;
 
-  // 1. Primary: Google Interactions API (Default Standard since June 2026)
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/interactions?key=${encodeURIComponent(key)}`;
-    const payload = {
-      model: 'gemini-3.8-flash',
-      input: userPrompt,
-      system_instruction: systemPrompt,
-      response_format: {
-        type: 'text',
-        mime_type: 'application/json'
-      },
-      store: false
-    };
+  for (const model of candidateModels) {
+    // 1. Interactions API (Supported on gemini-3.8-flash)
+    if (model === 'gemini-3.8-flash') {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/interactions?key=${encodeURIComponent(key)}`;
+        const payload = {
+          model: 'gemini-3.8-flash',
+          input: userPrompt,
+          system_instruction: systemPrompt,
+          response_format: {
+            type: 'text',
+            mime_type: 'application/json'
+          },
+          store: false
+        };
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': key
-      },
-      body: JSON.stringify(payload)
-    });
+        const res = await fetchWithBackoff(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': key
+          },
+          body: JSON.stringify(payload)
+        }, 1, 'Gemini 3.8 Flash (Interactions API)');
 
-    if (res.ok) {
-      const data = await res.json();
-      state.totalCalls++;
-      const { costKRW } = extractTokenUsage(data);
-      state.totalCostKRW += costKRW;
+        if (res.ok) {
+          const data = await res.json();
+          state.totalCalls++;
+          const { costKRW } = extractTokenUsage(data, 'gemini-3.8-flash');
+          state.totalCostKRW += costKRW;
 
-      const rawText = extractTextFromGemini(data);
-      const parsed = safeJsonParse(rawText);
-      return { content: parsed, costKRW, modelUsed: 'gemini-3.8-flash (Interactions API)' };
-    } else {
-      const err = await res.json().catch(() => ({}));
-      const errMsg = err.error?.message || `Google Gemini Interactions API 오류 (${res.status})`;
-      if (res.status === 400 || res.status === 403) {
-        if (errMsg.toLowerCase().includes('prepayment') || errMsg.toLowerCase().includes('depleted') || errMsg.toLowerCase().includes('billing')) {
-          throw new Error(`[결제 소진] Google Cloud 선불 크레딧이 소진되었습니다: ${errMsg}`);
+          const rawText = extractTextFromGemini(data);
+          const parsed = safeJsonParse(rawText);
+          return { content: parsed, costKRW, modelUsed: 'gemini-3.8-flash (Interactions API)' };
+        } else {
+          const err = await res.json().catch(() => ({}));
+          const errMsg = err.error?.message || `Google Gemini Interactions API 오류 (${res.status})`;
+          if (res.status === 400 || res.status === 403) {
+            if (errMsg.toLowerCase().includes('prepayment') || errMsg.toLowerCase().includes('depleted') || errMsg.toLowerCase().includes('billing')) {
+              throw new Error(`[결제 소진] Google Cloud 선불 크레딧이 소진되었습니다: ${errMsg}`);
+            }
+            if (errMsg.toLowerCase().includes('key') || errMsg.toLowerCase().includes('permission') || res.status === 403) {
+              throw new Error(`API 키가 유효하지 않거나 권한이 없습니다: ${errMsg}`);
+            }
+          }
+          lastError = new Error(errMsg);
         }
-        if (errMsg.toLowerCase().includes('key') || errMsg.toLowerCase().includes('permission') || res.status === 403) {
-          throw new Error(`API 키가 유효하지 않거나 권한이 없습니다: ${errMsg}`);
+      } catch(e) {
+        if (e.message.includes('결제 소진') || e.message.includes('API 키가 유효하지 않거나')) {
+          throw e;
         }
-      } else if (res.status === 429) {
-        throw new Error(`무료 사용량(15 RPM / 1,500 RPD)을 초과했습니다: ${errMsg}`);
+        lastError = e;
       }
-      lastError = new Error(errMsg);
     }
-  } catch(e) {
-    if (e.message.includes('결제 소진') || e.message.includes('API 키가 유효하지 않거나') || e.message.includes('무료 사용량')) {
-      throw e;
-    }
-    lastError = e;
-  }
 
-  // 2. Secondary Fallback: generateContent REST Endpoint (gemini-3.8-flash -> gemini-3.7-flash)
-  const fallbackModels = ['gemini-3.8-flash', 'gemini-3.7-flash'];
-  for (const model of fallbackModels) {
+    // 2. generateContent REST Endpoint (for candidate model)
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
       const payload = {
@@ -1358,13 +1423,22 @@ async function callGemini(systemPrompt, userPrompt) {
         }
       };
 
-      const res = await fetch(url, {
+      const res = await fetchWithBackoff(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
-      });
+      }, 1, `${model} (generateContent)`);
 
-      if (!res.ok) {
+      if (res.ok) {
+        const data = await res.json();
+        state.totalCalls++;
+        const { costKRW } = extractTokenUsage(data, model);
+        state.totalCostKRW += costKRW;
+
+        const rawText = extractTextFromGemini(data);
+        const parsed = safeJsonParse(rawText);
+        return { content: parsed, costKRW, modelUsed: `${model} (generateContent)` };
+      } else {
         const err = await res.json().catch(() => ({}));
         const errMsg = err.error?.message || `Google Gemini API 통신 오류 (${res.status})`;
         if (res.status === 400 || res.status === 403) {
@@ -1374,26 +1448,18 @@ async function callGemini(systemPrompt, userPrompt) {
           if (errMsg.toLowerCase().includes('key') || errMsg.toLowerCase().includes('permission') || res.status === 403) {
             throw new Error(`API 키가 유효하지 않거나 권한이 없습니다: ${errMsg}`);
           }
-        } else if (res.status === 429) {
-          throw new Error(`무료 사용량(15 RPM / 1,500 RPD)을 초과했습니다: ${errMsg}`);
+          if (errMsg.toLowerCase().includes('no longer available') || errMsg.toLowerCase().includes('not found') || res.status === 404) {
+            continue;
+          }
         }
         lastError = new Error(errMsg);
         continue;
       }
-
-      const data = await res.json();
-      state.totalCalls++;
-      const { costKRW } = extractTokenUsage(data);
-      state.totalCostKRW += costKRW;
-
-      const rawText = extractTextFromGemini(data);
-      const parsed = safeJsonParse(rawText);
-      return { content: parsed, costKRW, modelUsed: `${model} (generateContent)` };
     } catch(e) {
-      lastError = e;
-      if (e.message.includes('결제 소진') || e.message.includes('API 키가 유효하지 않거나') || e.message.includes('무료 사용량')) {
+      if (e.message.includes('결제 소진') || e.message.includes('API 키가 유효하지 않거나')) {
         throw e;
       }
+      lastError = e;
     }
   }
 
@@ -1439,7 +1505,7 @@ async function executePipeline(relation, lastMsg, contextText) {
   }
 
   // Real Google Gemini LLM Pipeline (BYOK)
-  toast('⚡ Google Gemini 3.8 Flash 실시간 분석 중...');
+  toast('⚡ Google Gemini 실시간 심층 분석 중...');
   const promptCtx = ProfileStore.getPromptContext(relation);
 
   const systemPrompt = `너는 고맥락 한국어 메신저 분석 및 답장 코-파일럿 "WsIr Engine"이다.
@@ -1505,7 +1571,7 @@ ${contextText}
   try { localStorage.setItem(cacheKey, JSON.stringify(combined)); } catch(e){}
   renderResults(combined, geminiRes.costKRW, false);
   saveStats();
-  toast('✨ Gemini 3.8 Flash 답장 추천 완료!');
+  toast(`✨ ${geminiRes.modelUsed || 'Gemini'} 답장 추천 완료!`);
 }
 
 function renderResults(res, cost, isCached) {
@@ -1803,9 +1869,18 @@ function resetProfile() {
 function updateModeIndicator() {
   const ind = document.getElementById('mode-indicator');
   const hasKey = !!localStorage.getItem(KEY_STORAGE);
+  const pref = localStorage.getItem(MODEL_PREF_KEY) || 'auto';
   if (hasKey) {
     ind.className = 'badge-mode real';
-    ind.textContent = '⚡ Gemini 3.8';
+    if (pref === 'auto') {
+      ind.textContent = '⚡ Gemini Auto';
+    } else if (pref.includes('3.8')) {
+      ind.textContent = '⚡ Gemini 3.8';
+    } else if (pref.includes('lite')) {
+      ind.textContent = '⚡ Gemini Lite';
+    } else {
+      ind.textContent = '⚡ Gemini 2.5';
+    }
   } else {
     ind.className = 'badge-mode demo';
     ind.textContent = '⚡ 체험 모드';
@@ -1814,12 +1889,19 @@ function updateModeIndicator() {
 function toggleEngineMode() { openKeyModal(); }
 function openKeyModal() {
   const key = localStorage.getItem(KEY_STORAGE) || '';
+  const pref = localStorage.getItem(MODEL_PREF_KEY) || 'auto';
   document.getElementById('api-key-input').value = key;
+  const sel = document.getElementById('model-select');
+  if (sel) sel.value = pref;
   document.getElementById('key-modal').classList.add('show');
 }
 function closeKeyModal() { document.getElementById('key-modal').classList.remove('show'); }
 function saveKey() {
   const k = document.getElementById('api-key-input').value.trim();
+  const sel = document.getElementById('model-select');
+  if (sel) {
+    localStorage.setItem(MODEL_PREF_KEY, sel.value);
+  }
   if (k && !k.startsWith('AIzaSy') && k.length < 30) {
     if (!confirm('입력하신 키가 일반적인 Google Gemini API 키 형식(AIzaSy...)과 다릅니다. 그대로 저장하시겠습니까?')) {
       return;
@@ -1827,7 +1909,7 @@ function saveKey() {
   }
   if (k) {
     localStorage.setItem(KEY_STORAGE, k);
-    toast('🔑 Gemini API 키 저장 완료! 실시간 엔진 활성화');
+    toast('🔑 Gemini 설정 저장 완료! 실시간 엔진 활성화');
   } else {
     localStorage.removeItem(KEY_STORAGE);
     toast('⚡ 체험 모드로 전환되었습니다.');
