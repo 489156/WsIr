@@ -858,7 +858,10 @@ function renderResults(res, cost, isCached) {
   ss.style.display = 'block';
   ss.innerHTML = `
     <div class="suggestion-section">
-      <div style="font-size:12px;font-weight:700;color:var(--text-dim);margin-bottom:10px;text-transform:uppercase;">💬 추천 답장 후보 (카드 클릭 시 복사 / ✏️ 클릭 시 수정 및 학습)</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <span style="font-size:12px;font-weight:700;color:var(--text-dim);text-transform:uppercase;">💬 추천 답장 후보 (클릭 시 복사)</span>
+        <button class="input-action-btn" onclick="shareSummary()" title="분석 결과 및 Wow Point를 클립보드에 공유용으로 복사">📢 결과 전체 공유</button>
+      </div>
       ${res.candidates.map((c, i) => {
         const isWow = c.tier === 'wow';
         return `
@@ -881,6 +884,25 @@ function renderResults(res, cost, isCached) {
       }).join('')}
     </div>
   `;
+}
+
+function shareSummary() {
+  if (!state.lastResult) return;
+  const a = state.lastResult.analysis;
+  const wow = state.lastResult.candidates.find(c => c.tier === 'wow') || state.lastResult.candidates[0];
+  const shareText = `[나 뭐라고 보낼까? 💬 AI 분석 결과]
+📩 상대 메시지: "${state.lastMsg}"
+🔍 의도/서브텍스트: ${a.subtext}
+⚡ Wow Point 추천 답장:
+"${wow.text}"
+(💡 이유: ${wow.rationale})
+
+👉 직접 테스트해보기: https://github.com/489156/WsIr`;
+  navigator.clipboard.writeText(shareText).then(() => {
+    toast('📢 분석 결과가 클립보드에 복사되었습니다! (SNS/메신저 공유 가능)');
+  }).catch(() => {
+    toast('클립보드 권한이 필요합니다.');
+  });
 }
 
 // User Action Handlers
