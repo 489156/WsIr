@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0b0d12" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<title>나 뭐라고 보낼까? (WsIr) — AI 커뮤니케이션 코-파일럿 (Gemini 2.5 Engine)</title>
+<title>나 뭐라고 보낼까? (WsIr) — AI 커뮤니케이션 코-파일럿 (Engine v6.0 Recursive & Vision)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -58,6 +58,39 @@
       box-shadow: 0 24px 70px rgba(0,0,0,0.6);
     }
   }
+
+
+  /* Dropzone */
+  .dropzone {
+    border: 2px dashed var(--line); border-radius: 16px; padding: 26px 16px;
+    text-align: center; cursor: pointer; transition: 0.25s; background: var(--bg-elev);
+    margin-bottom: 12px;
+  }
+  .dropzone:hover, .dropzone.dragover {
+    border-color: var(--brand); background: rgba(255,122,89,0.08); transform: scale(1.01);
+  }
+  .feedback-group {
+    display: flex; gap: 4px; align-items: center;
+  }
+  .fb-btn {
+    width: 30px; height: 30px; border-radius: 8px; background: var(--bg-elev);
+    border: 1px solid var(--line); display: grid; place-items: center;
+    color: var(--text-dim); font-size: 13px; cursor: pointer; transition: 0.15s;
+  }
+  .fb-btn:hover { border-color: var(--brand); color: var(--text); transform: scale(1.08); }
+  .fb-btn.active { border-color: var(--brand); background: rgba(255,122,89,0.2); color: var(--brand); }
+  
+  /* Style DNA Dashboard */
+  .dna-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px;
+  }
+  .dna-card {
+    background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px; padding: 12px;
+  }
+  .dna-card .t { font-size: 11px; color: var(--text-mute); font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+  .dna-card .val { font-size: 13.5px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 6px; }
+  .gauge-bar { height: 6px; border-radius: 3px; background: var(--bg-elev); margin-top: 6px; overflow: hidden; position: relative; }
+  .gauge-fill { height: 100%; border-radius: 3px; transition: 0.3s; }
 
   /* Header */
   .header {
@@ -314,8 +347,9 @@
   <main id="screen-main" class="screen active">
     <!-- Mode Switcher -->
     <div class="mode-switch">
-      <div class="mode-tab active" id="tab-custom" onclick="setMode('custom')">✍️ 자유 대화 입력</div>
-      <div class="mode-tab" id="tab-preset" onclick="setMode('preset')">💬 5대 시나리오 테스트</div>
+      <div class="mode-tab active" id="tab-custom" onclick="setMode('custom')">💬 텍스트 입력</div>
+      <div class="mode-tab" id="tab-vision" onclick="setMode('vision')">📸 캡처 분석 (Vision)</div>
+      <div class="mode-tab" id="tab-preset" onclick="setMode('preset')">💡 5대 프리셋</div>
     </div>
 
     <!-- Mode: Custom Input -->
@@ -357,6 +391,60 @@
         <p style="font-size:11px; color:var(--text-mute); text-align:center; margin-top:8px;">
           단축키: <b>Ctrl + Enter</b> 로 즉시 추천 생성
         </p>
+      </div>
+    </section>
+
+    <!-- Mode: Vision Screenshot Upload (New in v6.0) -->
+    <section id="mode-vision-view" style="display:none;">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <span style="font-size:14px; font-weight:800; color:var(--text);">📸 카톡/메신저 캡처 스크린샷 분석</span>
+          <span style="font-size:10.5px; padding:3px 8px; border-radius:6px; background:rgba(78,224,203,0.15); color:var(--accent-2); font-weight:700; border:1px solid rgba(78,224,203,0.3);">Gemini 2.5 Vision</span>
+        </div>
+        <p style="font-size:12px; color:var(--text-dim); margin-bottom:14px; line-height:1.5;">
+          대화를 일일이 복사할 필요 없이 캡처 1장만 올리세요. <b>답장 간격(시간차)</b>, <b>카톡 '1' 유무</b>, <b>상대방 프로필 뉘앙스</b>까지 한 번에 시각적으로 판독합니다.
+        </p>
+
+        <div class="dropzone" id="vision-dropzone" onclick="document.getElementById('vision-file-input').click()">
+          <input type="file" id="vision-file-input" accept="image/*" style="display:none;" onchange="handleImageSelect(event)" />
+          <div id="dropzone-prompt">
+            <div style="font-size:32px; margin-bottom:8px;">📱</div>
+            <div style="font-size:13.5px; font-weight:700; color:var(--text);">스크린샷을 드래그하거나 클릭하여 업로드</div>
+            <div style="font-size:11.5px; color:var(--text-mute); margin-top:4px;">또는 화면 캡처 후 여기서 <b>Ctrl+V (붙여넣기)</b></div>
+          </div>
+          <div id="dropzone-preview" style="display:none; text-align:center;">
+            <img id="vision-preview-img" style="max-height:180px; max-width:100%; border-radius:12px; border:1px solid var(--line); margin-bottom:8px; box-shadow:0 8px 20px rgba(0,0,0,0.4);" />
+            <div style="display:flex; justify-content:center; gap:8px;">
+              <button class="input-action-btn" onclick="event.stopPropagation(); removeVisionImage()" style="color:var(--bad);">✕ 이미지 삭제</button>
+              <button class="input-action-btn" onclick="event.stopPropagation(); document.getElementById('vision-file-input').click()">🔄 다른 이미지 선택</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>관계 설정 (선택 사항)</label>
+          <select id="vision-relation">
+            <option value="auto">🤖 이미지에서 AI가 자동 감지</option>
+            <option value="boss">👔 직장 상사 / 팀장</option>
+            <option value="romantic">💕 썸 / 소개팅 / 연인</option>
+            <option value="client">💼 거래처 / 클라이언트</option>
+            <option value="colleague">☕ 직장 동료</option>
+            <option value="friend">🤝 친구 / 지인</option>
+            <option value="senior">🎓 선배</option>
+            <option value="junior">🌱 후배</option>
+            <option value="professor">📚 교수님</option>
+            <option value="parent">👨‍👩‍👧 부모님 / 가족</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>내가 원하는 의도나 방향 (선택)</label>
+          <input type="text" id="vision-intent" placeholder="예: 정중하게 다음 주로 미루기, 호감 표현하기" />
+        </div>
+
+        <button class="cta wow" id="vision-gen-btn" onclick="handleGenerateVision()" style="margin-top:8px;">
+          <span>📸 스크린샷 AI 자동 분석 & 답장 추천</span>
+        </button>
       </div>
     </section>
 
@@ -417,10 +505,36 @@
       <h2 style="font-size:20px; font-weight:800; margin-bottom:4px;">🧠 나만의 학습 프로필</h2>
       <p style="font-size:12px; color:var(--text-dim);">답장을 수정할 때마다 LCS diff 알고리즘을 통해 내 말투를 온디바이스로 학습합니다.</p>
     </div>
-    <div class="profile-grid">
-      <div class="profile-box"><div class="v" id="p-total-samples">0</div><div class="l">학습 횟수</div></div>
-      <div class="profile-box"><div class="v" id="p-total-calls">0</div><div class="l">총 호출 수</div></div>
-      <div class="profile-box"><div class="v" id="p-total-cost">₩0</div><div class="l">누적 비용</div></div>
+    <div class="profile-grid" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="profile-box"><div class="v" id="p-satisfaction" style="color:var(--good);">100%</div><div class="l">응답 만족도</div></div>
+      <div class="profile-box"><div class="v" id="p-total-samples">0</div><div class="l">재귀 학습 수</div></div>
+      <div class="profile-box"><div class="v" id="p-total-calls">0</div><div class="l">총 세션</div></div>
+      <div class="profile-box"><div class="v" id="p-total-cost">₩0</div><div class="l">누적 절감액</div></div>
+    </div>
+
+    <!-- Style DNA Gauges -->
+    <div style="font-size:12px; font-weight:800; color:var(--text-dim); text-transform:uppercase; margin:14px 0 8px;">🧬 내 스타일 DNA (재귀 진화 지표)</div>
+    <div class="dna-grid">
+      <div class="dna-card">
+        <div class="t">🎯 격식도 편향</div>
+        <div class="val" id="dna-formality-val">자연스러운 균형</div>
+        <div class="gauge-bar"><div class="gauge-fill" id="dna-formality-bar" style="width:50%; background:var(--grad-cool);"></div></div>
+      </div>
+      <div class="dna-card">
+        <div class="t">✨ 감정 표현 (이모지/초성)</div>
+        <div class="val" id="dna-emo-val">적절한 균형</div>
+        <div class="gauge-bar"><div class="gauge-fill" id="dna-emo-bar" style="width:50%; background:var(--grad);"></div></div>
+      </div>
+      <div class="dna-card">
+        <div class="t">📏 문장 호흡 / 길이</div>
+        <div class="val" id="dna-len-val">1~2줄 표준 호흡</div>
+        <div class="gauge-bar"><div class="gauge-fill" id="dna-len-bar" style="width:50%; background:var(--grad-wow);"></div></div>
+      </div>
+      <div class="dna-card">
+        <div class="t">📊 마이크로 피드백</div>
+        <div class="val" id="dna-feedback-val">👍 0 / 👎 0</div>
+        <div style="font-size:10.5px; color:var(--text-mute); margin-top:5px;" id="dna-edits-val">수정 학습 0회 / 복사 0회</div>
+      </div>
     </div>
     <div id="profile-relations-list"></div>
 
@@ -659,38 +773,106 @@ const state = {
   cacheMisses: 0
 };
 
-// Profile & Recursive Memory Store
+// Profile & Recursive Self-Improvement Engine v6.0
 const ProfileStore = {
-  data: { overall: { samples: 0, formalityBias: 0 }, perRelation: {} },
+  data: {
+    overall: {
+      samples: 0,
+      formalityBias: 0,      // -1.0(극구어) ~ +1.0(극격식)
+      emoticonDensity: 0.5,   // 0.0(절제) ~ 1.0(풍부)
+      lengthBias: 0,          // -1.0(단답) ~ +1.0(완충형)
+      satisfactionRate: 100,  // 0 ~ 100%
+      totalCopies: 0,
+      totalEdits: 0,
+      totalThumbsUp: 0,
+      totalThumbsDown: 0
+    },
+    perRelation: {}
+  },
   init() {
     try {
       const stored = localStorage.getItem(PROFILE_KEY);
-      if (stored) this.data = JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        this.data = Object.assign(this.data, parsed);
+        if (!this.data.overall.satisfactionRate) this.data.overall.satisfactionRate = 100;
+      }
     } catch(e) {}
   },
   save() { localStorage.setItem(PROFILE_KEY, JSON.stringify(this.data)); },
   getRelation(rel) {
     if (!this.data.perRelation[rel]) {
-      this.data.perRelation[rel] = { samples: 0, formalityBias: 0, preferredPhrases: {}, avoidedPhrases: {} };
+      this.data.perRelation[rel] = {
+        samples: 0, formalityBias: 0, emoticonDensity: 0.5, lengthBias: 0,
+        preferredPhrases: {}, avoidedPhrases: {},
+        positiveSignals: 0, negativeSignals: 0
+      };
     }
     return this.data.perRelation[rel];
   },
   getPromptContext(rel) {
     const rp = this.getRelation(rel);
-    if (rp.samples < 2) return '';
-    const phrases = Object.entries(rp.preferredPhrases).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([w])=>`"${w}"`).join(', ');
-    const tone = rp.formalityBias > 0.3 ? '정중한 격식체' : rp.formalityBias < -0.3 ? '친근한 구어체' : '자연스러운 균형 톤';
-    return `\n\n[사용자 개인화 스타일 - 이 관계에서 학습됨]\n- 선호 문체: ${tone}\n${phrases ? `- 자주 쓰는 표현: ${phrases}\n` : ''}(위 표현 스타일을 답장에 자연스럽게 반영할 것)`;
+    const ov = this.data.overall;
+    if (rp.samples === 0 && ov.samples === 0) return '';
+
+    const effectiveFormality = (rp.formalityBias * 0.7 + ov.formalityBias * 0.3);
+    const tone = effectiveFormality > 0.25 ? '하십시오체 중심의 엄격하고 정중한 비즈니스 격식' :
+                 effectiveFormality < -0.25 ? '친근한 구어체 및 자연스러운 해요체/반존대' :
+                 '단정하면서도 부드러운 해요체 중심';
+
+    const effectiveEmo = ((rp.emoticonDensity !== undefined ? rp.emoticonDensity : 0.5) * 0.7 + (ov.emoticonDensity || 0.5) * 0.3);
+    const emoTone = effectiveEmo > 0.6 ? '이모티콘, ㅋㅋ, ㅎㅎ, 물결(~)을 자연스럽게 1~2개 섞어 따뜻하고 친밀한 뉘앙스 유지' :
+                    effectiveEmo < 0.4 ? '이모티콘이나 초성(ㅋㅋ, ㅎㅎ)을 지양하고 깔끔한 문장부호로 담백하게 끝맺음' :
+                    '상대방 호흡에 맞춘 절제된 이모티콘 1개 내외';
+
+    const effectiveLen = ((rp.lengthBias || 0) * 0.7 + (ov.lengthBias || 0) * 0.3);
+    const lenTone = effectiveLen > 0.25 ? '상대방의 노고를 감싸주는 2~3줄의 배려 넘치는 완충형 문장' :
+                    effectiveLen < -0.25 ? '핵심만 군더더기 없이 치고 빠지는 1줄 압축형 문체' :
+                    '1~2줄의 직관적이고 군더더기 없는 메신저 호흡';
+
+    const preferred = Object.entries(rp.preferredPhrases).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([w])=>`"${w}"`).join(', ');
+    const avoided = Object.entries(rp.avoidedPhrases).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([w])=>`"${w}"`).join(', ');
+
+    return `\n\n[사용자 맞춤형 Style DNA (온디바이스 재귀 학습 반영)]:
+- 선호 문체: ${tone}
+- 감정/이모지 표현: ${emoTone}
+- 문장 호흡/길이: ${lenTone}
+${preferred ? `- 자주 쓰는 애용 표현: ${preferred} (문맥에 맞게 자연스럽게 녹일 것)\n` : ''}${avoided ? `- 기피/비선호 표현: ${avoided} (답장에 절대 포함하지 말 것)\n` : ''}`;
+  },
+  registerFeedback(rel, idx, isPositive) {
+    const rp = this.getRelation(rel);
+    this.data.overall.samples++;
+    if (isPositive) {
+      this.data.overall.totalThumbsUp++;
+      rp.positiveSignals = (rp.positiveSignals || 0) + 1;
+      this.data.overall.satisfactionRate = Math.min(100, (this.data.overall.satisfactionRate || 100) + 2);
+    } else {
+      this.data.overall.totalThumbsDown++;
+      rp.negativeSignals = (rp.negativeSignals || 0) + 1;
+      this.data.overall.satisfactionRate = Math.max(30, (this.data.overall.satisfactionRate || 100) - 4);
+    }
+    this.save();
   },
   update(rel, orig, edited, diff) {
     this.data.overall.samples++;
+    this.data.overall.totalEdits++;
     const decay = 0.85;
-    const shift = computeFormalityShift(orig, edited);
-    this.data.overall.formalityBias = this.data.overall.formalityBias * decay + shift * (1 - decay);
+
+    const formShift = computeFormalityShift(orig, edited);
+    this.data.overall.formalityBias = this.data.overall.formalityBias * decay + formShift * (1 - decay);
+
+    const emoShift = computeEmoticonShift(orig, edited);
+    this.data.overall.emoticonDensity = Math.max(0, Math.min(1, (this.data.overall.emoticonDensity || 0.5) * decay + emoShift * (1 - decay)));
+
+    const lenShift = computeLengthShift(orig, edited);
+    this.data.overall.lengthBias = Math.max(-1, Math.min(1, (this.data.overall.lengthBias || 0) * decay + lenShift * (1 - decay)));
 
     const rp = this.getRelation(rel);
     rp.samples++;
-    rp.formalityBias = rp.formalityBias * decay + shift * (1 - decay);
+    rp.formalityBias = rp.formalityBias * decay + formShift * (1 - decay);
+    rp.emoticonDensity = Math.max(0, Math.min(1, (rp.emoticonDensity || 0.5) * decay + emoShift * (1 - decay)));
+    rp.lengthBias = Math.max(-1, Math.min(1, (rp.lengthBias || 0) * decay + lenShift * (1 - decay)));
+
     diff.added.forEach(w => { if (w.length >= 2 && w.length <= 8) rp.preferredPhrases[w] = (rp.preferredPhrases[w] || 0) + 1; });
     diff.removed.forEach(w => { if (w.length >= 2 && w.length <= 8) rp.avoidedPhrases[w] = (rp.avoidedPhrases[w] || 0) + 1; });
     this.save();
@@ -723,10 +905,195 @@ function computeDiff(orig, edit) {
   }
   return { added: added.reverse(), removed: removed.reverse() };
 }
+function computeEmoticonShift(orig, edit) {
+  const count = t => (t.match(/[ㅋㅎㅠㅜ~♡❤️☺️😊👍🙏🥺✨🔥]/g) || []).length;
+  const d = count(edit) - count(orig);
+  return d > 0 ? 0.85 : d < 0 ? 0.15 : 0.5;
+}
+function computeLengthShift(orig, edit) {
+  const d = edit.length - orig.length;
+  return Math.max(-1, Math.min(1, d / 25));
+}
+
 function computeFormalityShift(orig, edit) {
   const f = t => (t.match(/습니다|드립니다|바랍니다|하십시오|되겠습니까/g) || []).length;
   const c = t => (t.match(/해요|에요|드려요|ㅋㅋ|ㅎㅎ|ㅠ|줘|가자/g) || []).length;
   return Math.max(-1, Math.min(1, ((f(edit) - f(orig)) - (c(edit) - c(orig))) / 3));
+}
+
+
+// Google Gemini 2.5 Flash Vision Multimodal Call
+async function callGeminiVision(base64Data, mimeType, systemPrompt, userPrompt) {
+  const key = localStorage.getItem(KEY_STORAGE);
+  if (!key) throw new Error('Google Gemini API 키가 설정되지 않았습니다.');
+
+  const model = 'gemini-2.5-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+  const cleanBase64 = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
+
+  const payload = {
+    systemInstruction: {
+      parts: [{ text: systemPrompt }]
+    },
+    contents: [
+      {
+        role: 'user',
+        parts: [
+          {
+            inlineData: {
+              mimeType: mimeType || 'image/jpeg',
+              data: cleanBase64
+            }
+          },
+          { text: userPrompt }
+        ]
+      }
+    ],
+    generationConfig: {
+      temperature: 0.7,
+      responseMimeType: 'application/json'
+    }
+  };
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const errMsg = err.error?.message || `Gemini Vision 분석 오류 (${res.status})`;
+    throw new Error(errMsg);
+  }
+
+  const data = await res.json();
+  state.totalCalls++;
+
+  const usage = data.usageMetadata || {};
+  const inTokens = usage.promptTokenCount || 0;
+  const outTokens = usage.candidatesTokenCount || 0;
+  const costKRW = Math.round(((inTokens * 0.30 + outTokens * 2.50) / 1000000) * 1350);
+  state.totalCostKRW += costKRW;
+
+  let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+  rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+  return { content: JSON.parse(rawText), costKRW, modelUsed: model };
+}
+
+let currentVisionBase64 = null;
+let currentVisionMime = 'image/jpeg';
+
+function handleImageSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  loadVisionImageFile(file);
+}
+
+function loadVisionImageFile(file) {
+  currentVisionMime = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = ev => {
+    currentVisionBase64 = ev.target.result;
+    document.getElementById('vision-preview-img').src = currentVisionBase64;
+    document.getElementById('dropzone-prompt').style.display = 'none';
+    document.getElementById('dropzone-preview').style.display = 'block';
+    toast('📸 스크린샷이 로드되었습니다!');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeVisionImage() {
+  currentVisionBase64 = null;
+  document.getElementById('vision-file-input').value = '';
+  document.getElementById('vision-preview-img').src = '';
+  document.getElementById('dropzone-prompt').style.display = 'block';
+  document.getElementById('dropzone-preview').style.display = 'none';
+}
+
+async function handleGenerateVision() {
+  if (!currentVisionBase64) {
+    toast('⚠️ 분석할 스크린샷 이미지를 업로드해주세요!');
+    return;
+  }
+  const rel = document.getElementById('vision-relation').value;
+  const intent = document.getElementById('vision-intent').value.trim();
+  const hasKey = !!localStorage.getItem(KEY_STORAGE);
+
+  document.getElementById('vision-gen-btn').disabled = true;
+
+  if (!hasKey) {
+    toast('⚡ [체험 모드] 스크린샷 비전 시뮬레이션 판독 중...');
+    await new Promise(r => setTimeout(r, 900));
+    const fallback = MOCK_DB['client'];
+    const simResult = {
+      analysis: {
+        intent: '업무 시안 수신 확인 및 신중한 지연 검토',
+        emotion: '즉각적인 판단 유보 및 실무자 내부 검토 필요',
+        subtext: '지금 당장 결정을 내리기엔 리스크가 있어 시간을 벌고 싶음 (스크린샷 대화 텀 45분 감지)',
+        whatTheyWant: '무리한 재촉 없는 편안한 검토 기간 보장',
+        strategy: '정중한 대기 + 경영진 보고용 1장 요약본 선제 지원 제안',
+        redFlags: ['"언제까지 검토 가능한가요?"', '"빠른 회신 바랍니다"']
+      },
+      candidates: [...fallback.candidates, fallback.wow_point]
+    };
+    state.currentRelation = 'client';
+    state.lastMsg = '확인해보겠습니다 (스크린샷 판독)';
+    renderResults(simResult, 0, false);
+    saveStats();
+    toast('✨ 스크린샷 비전 분석 완료! (체험 모드)');
+    document.getElementById('vision-gen-btn').disabled = false;
+    return;
+  }
+
+  // Real Gemini Vision Pipeline
+  toast('⚡ Gemini 2.5 Flash Vision이 캡처 화면을 시각 판독 중...');
+  try {
+    const promptCtx = ProfileStore.getPromptContext(rel === 'auto' ? 'friend' : rel);
+    const systemPrompt = `너는 세계 최고 수준의 고맥락 한국어 메신저 분석기 "WsIr Vision Engine"이다.
+제공된 카카오톡/메신저 스크린샷 이미지를 시각적으로 정밀 판독하라.
+판독 기준:
+1. 말풍선 배치: 노란색/우측 말풍선은 '나(User)', 흰색/좌측 말풍선은 '상대방(Other)'.
+2. 시간대 및 답장 간격(Latency): 메시지 옆 전송 시간(예: 오후 2시 -> 밤 10시 등 텀)을 파악하여 심리 분석에 반영할 것.
+3. 읽음 표시: 카카오톡 숫자 '1' 유무 판독.
+4. 상대방의 마지막 메시지를 정확히 추출하고, 그 이면의 서브텍스트를 해독할 것.
+
+오직 유효한 JSON 형식으로만 응답하라.
+[출력 JSON 스키마]:
+{
+  "analysis": {
+    "intent": "상대방의 표면적 의도 1줄",
+    "emotion": "표정 이면의 실제 감정/심리 상태 (시간차 반영)",
+    "subtext": "상대방의 숨겨진 결핍, 진짜 욕구 또는 불안 (따옴표 필수)",
+    "whatTheyWant": "상대방이 나에게 진정으로 바라는 행동/답변",
+    "strategy": "가장 추천하는 커뮤니케이션 대응 전략 및 톤",
+    "redFlags": ["절대 피해야 할 금기 표현이나 반응 1~2개"]
+  },
+  "candidates": [
+    { "tier": "basic", "tone": "격식 (정석)", "text": "1~2줄의 압축된 한국어 답장 문구", "rationale": "이유" },
+    { "tier": "thoughtful", "tone": "배려 (센스)", "text": "상대방의 상황이나 감정을 공감해주는 1~2줄 답장 문구", "rationale": "포인트" },
+    { "tier": "basic", "tone": "간결 (안전)", "text": "군더더기 없는 담백하고 명확한 1~2줄 답장 문구", "rationale": "이유" },
+    { "tier": "wow", "tone": "전략 (와우 포인트)", "text": "상대방의 숨은 결핍을 선제 해소하며 대화의 주도권을 쥐는 허를 찌르는 전략적 답장", "rationale": "왜 감탄을 자아내는지", "wow_detail": "사회심리학적 분석" }
+  ]
+}
+${promptCtx}`;
+
+    const userPrompt = `스크린샷 이미지를 정밀 분석하여 상대방의 마지막 메시지에 대한 최적의 답장 3안과 ⚡ Wow Point를 생성하라.
+사용자 지정 관계: ${rel}
+사용자 지정 의도: ${intent || '자연스러운 호응 및 대화 리드'}`;
+
+    const visionRes = await callGeminiVision(currentVisionBase64, currentVisionMime, systemPrompt, userPrompt);
+    state.currentRelation = rel === 'auto' ? 'friend' : rel;
+    state.lastMsg = '스크린샷 시각 분석 결과';
+    renderResults(visionRes.content, visionRes.costKRW, false);
+    saveStats();
+    toast('✨ 스크린샷 비전 답장 추천이 완료되었습니다!');
+  } catch(e) {
+    alert(e.message);
+  } finally {
+    document.getElementById('vision-gen-btn').disabled = false;
+  }
 }
 
 // Google Gemini API Official Integration Call
@@ -960,9 +1327,11 @@ function renderResults(res, cost, isCached) {
                 <span class="tier-badge ${isWow ? 'wow' : (c.tier==='thoughtful'?'thoughtful':'basic')}">${isWow ? '⚡ Wow Point' : (c.tone || '추천')}</span>
                 <span class="model-tag ${isWow ? 'premium' : ''}">${isWow ? 'Gemini 2.5 Flash (Thinking)' : 'Gemini 2.5 Flash'}</span>
               </div>
-              <div style="display:flex;gap:4px;">
-                <button class="icon-btn" onclick="event.stopPropagation(); openEditModal(${i})" title="수정 및 학습">✏️</button>
-                <button class="icon-btn" onclick="event.stopPropagation(); copyCandidate(${i})" title="클립보드 복사">📋</button>
+              <div class="feedback-group">
+                <button class="fb-btn ${c.rated==='up'?'active':''}" onclick="event.stopPropagation(); rateCandidate(${i}, true)" title="딱 내 스타일이에요 👍">👍</button>
+                <button class="fb-btn ${c.rated==='down'?'active':''}" onclick="event.stopPropagation(); rateCandidate(${i}, false)" title="어색해요 👎">👎</button>
+                <button class="fb-btn" onclick="event.stopPropagation(); openEditModal(${i})" title="수정 및 재귀 학습 ✏️">✏️</button>
+                <button class="fb-btn" onclick="event.stopPropagation(); copyCandidate(${i})" title="클립보드 복사 📋">📋</button>
               </div>
             </div>
             <div class="text">${escapeHtml(c.text)}</div>
@@ -1043,15 +1412,17 @@ function selectPreset(id) {
 
 function setMode(mode) {
   document.getElementById('tab-custom').classList.toggle('active', mode === 'custom');
+  document.getElementById('tab-vision').classList.toggle('active', mode === 'vision');
   document.getElementById('tab-preset').classList.toggle('active', mode === 'preset');
   document.getElementById('mode-custom-view').style.display = (mode === 'custom') ? 'block' : 'none';
+  document.getElementById('mode-vision-view').style.display = (mode === 'vision') ? 'block' : 'none';
   document.getElementById('mode-preset-view').style.display = (mode === 'preset') ? 'block' : 'none';
   document.getElementById('preset-phone-wrap').style.display = 'none';
 }
 
 function copyCandidate(idx) {
   const text = state.lastResult.candidates[idx].text;
-  navigator.clipboard.writeText(text).then(() => toast('📋 복사 완료! 메신저에 붙여넣으세요'));
+  ProfileStore.data.overall.totalCopies = (ProfileStore.data.overall.totalCopies || 0) + 1; ProfileStore.save(); navigator.clipboard.writeText(text).then(() => toast('📋 복사 완료! 메신저에 붙여넣으세요'));
 }
 
 function openEditModal(idx) {
@@ -1092,10 +1463,44 @@ function pasteClipboard(targetId) {
 }
 
 // Profile UI
+
+function rateCandidate(idx, isPositive) {
+  const cand = state.lastResult.candidates[idx];
+  cand.rated = isPositive ? 'up' : 'down';
+  ProfileStore.registerFeedback(state.currentRelation, idx, isPositive);
+  renderResults(state.lastResult, 0, false);
+  if (isPositive) {
+    toast('👍 피드백 반영: 이 어조가 선호 스타일 DNA에 강화되었습니다!');
+  } else {
+    toast('👎 피드백 반영: 향후 유사한 어조 생성이 억제됩니다.');
+  }
+}
+
 function renderProfile() {
-  document.getElementById('p-total-samples').textContent = ProfileStore.data.overall.samples;
+  const ov = ProfileStore.data.overall;
+  document.getElementById('p-satisfaction').textContent = `${ov.satisfactionRate || 100}%`;
+  document.getElementById('p-total-samples').textContent = ov.samples;
   document.getElementById('p-total-calls').textContent = state.totalCalls;
   document.getElementById('p-total-cost').textContent = `₩${state.totalCostKRW}`;
+
+  // DNA Gauges
+  const formPct = Math.round(50 + (ov.formalityBias || 0) * 40);
+  document.getElementById('dna-formality-bar').style.width = `${formPct}%`;
+  document.getElementById('dna-formality-val').textContent =
+    ov.formalityBias > 0.25 ? '격식 중심 (합쇼체)' : ov.formalityBias < -0.25 ? '친근 구어 (해요체)' : '자연스러운 균형';
+
+  const emoPct = Math.round((ov.emoticonDensity || 0.5) * 100);
+  document.getElementById('dna-emo-bar').style.width = `${emoPct}%`;
+  document.getElementById('dna-emo-val').textContent =
+    ov.emoticonDensity > 0.6 ? '풍부 (ㅋㅋ/이모지)' : ov.emoticonDensity < 0.4 ? '절제 (담백)' : '적절한 균형';
+
+  const lenPct = Math.round(50 + (ov.lengthBias || 0) * 40);
+  document.getElementById('dna-len-bar').style.width = `${lenPct}%`;
+  document.getElementById('dna-len-val').textContent =
+    ov.lengthBias > 0.25 ? '배려 완충형 (2~3줄)' : ov.lengthBias < -0.25 ? '초간결 압축 (1줄)' : '1~2줄 표준 호흡';
+
+  document.getElementById('dna-feedback-val').textContent = `👍 ${ov.totalThumbsUp || 0} / 👎 ${ov.totalThumbsDown || 0}`;
+  document.getElementById('dna-edits-val').textContent = `수정 학습 ${ov.totalEdits || 0}회 / 복사 ${ov.totalCopies || 0}회`;
 
   const rels = ['boss', 'client', 'senior', 'colleague', 'junior', 'professor', 'school', 'romantic', 'parent', 'sibling', 'friend'];
   const labels = {
@@ -1106,8 +1511,9 @@ function renderProfile() {
   let html = '';
   for (const r of rels) {
     const rp = ProfileStore.getRelation(r);
-    const formalPct = Math.round(50 + (rp.formalityBias || 0) * 30);
+    const formalPct = Math.round(50 + (rp.formalityBias || 0) * 40);
     const phrases = Object.entries(rp.preferredPhrases || {}).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    const avoided = Object.entries(rp.avoidedPhrases || {}).sort((a,b)=>b[1]-a[1]).slice(0,2);
     html += `
       <div class="relation-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
@@ -1117,7 +1523,11 @@ function renderProfile() {
         <div style="height:6px;background:var(--bg-elev);border-radius:3px;overflow:hidden;margin-bottom:6px;">
           <div style="width:${formalPct}%;height:100%;background:var(--grad-cool);"></div>
         </div>
-        <div>${phrases.length ? phrases.map(([w,c])=>`<span class="phrase">"${escapeHtml(w)}" ×${c}</span>`).join('') : '<span style="font-size:11px;color:var(--text-mute);">아직 학습된 맞춤 어휘 없음</span>'}</div>
+        <div style="display:flex; flex-wrap:wrap; gap:4px;">
+          ${phrases.length ? phrases.map(([w,c])=>`<span class="phrase" style="color:var(--good);">+ "${escapeHtml(w)}" ×${c}</span>`).join('') : ''}
+          ${avoided.length ? avoided.map(([w,c])=>`<span class="phrase" style="color:var(--bad); border-color:rgba(248,113,113,0.3);">- "${escapeHtml(w)}" ×${c}</span>`).join('') : ''}
+          ${!phrases.length && !avoided.length ? '<span style="font-size:11px;color:var(--text-mute);">아직 학습된 맞춤 어휘 없음</span>' : ''}
+        </div>
       </div>
     `;
   }
@@ -1236,6 +1646,38 @@ window.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeKeyModal();
     closeEditModal();
+  }
+});
+
+
+// Global Clipboard Image Paste (Ctrl+V) & Drag-and-Drop Handlers
+window.addEventListener('paste', e => {
+  const items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].type.indexOf('image') !== -1) {
+      const file = items[i].getAsFile();
+      setMode('vision');
+      loadVisionImageFile(file);
+      toast('📋 클립보드 캡처 이미지가 자동 붙여넣기 되었습니다!');
+      break;
+    }
+  }
+});
+
+// Drag and drop setup on dropzone
+window.addEventListener('DOMContentLoaded', () => {
+  const dz = document.getElementById('vision-dropzone');
+  if (dz) {
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+    dz.addEventListener('dragleave', e => { e.preventDefault(); dz.classList.remove('dragover'); });
+    dz.addEventListener('drop', e => {
+      e.preventDefault();
+      dz.classList.remove('dragover');
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        loadVisionImageFile(e.dataTransfer.files[0]);
+      }
+    });
   }
 });
 
