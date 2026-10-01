@@ -271,6 +271,12 @@
   .suggestion-card .text { font-size: 14.5px; line-height: 1.6; color: var(--text); word-break: keep-all; }
   .suggestion-card .why { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line-soft); font-size: 11.5px; color: var(--text-mute); }
   .suggestion-card .why b { color: var(--text-dim); }
+  .qt-btn {
+    background: var(--bg-elev); border: 1px solid var(--line); color: var(--text-dim);
+    font-size: 11.5px; font-weight: 700; padding: 6px 12px; border-radius: 100px;
+    cursor: pointer; white-space: nowrap; transition: 0.2s;
+  }
+  .qt-btn:hover { border-color: var(--brand); color: var(--brand); background: rgba(255,122,89,0.1); }
 
   /* Modals */
   .modal-bg {
@@ -345,6 +351,15 @@
 
   <!-- SCREEN: MAIN (Chat & Scenarios) -->
   <main id="screen-main" class="screen active">
+    <!-- Privacy Zero-Retention Banner -->
+    <div style="background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.2); border-radius: 12px; padding: 10px 14px; margin: 16px 18px 0; display: flex; align-items: flex-start; gap: 10px;">
+      <div style="font-size: 18px; line-height: 1;">🛡️</div>
+      <div>
+        <div style="font-size: 12px; font-weight: 800; color: var(--good); margin-bottom: 2px;">개인정보 Zero-Retention 정책</div>
+        <div style="font-size: 11px; color: var(--text-dim); line-height: 1.4;">입력하신 대화 내용과 카톡 캡처 이미지는 AI 분석 후 <b>서버에 일절 저장되지 않고 즉시 완전 폐기</b>됩니다. 안심하고 사용하세요.</div>
+      </div>
+    </div>
+    
     <!-- Mode Switcher -->
     <div class="mode-switch">
       <div class="mode-tab active" id="tab-custom" onclick="setMode('custom')">💬 텍스트 입력</div>
@@ -364,8 +379,11 @@
             <option value="colleague">🤝 직장 동료 (동기) — 상호 존중 해요체</option>
             <option value="junior">🌱 직장/학교 후배 — 배려와 심리적 안정감</option>
             <option value="professor">🧑‍🏫 교수님 — 최고 수준 격식 및 명확성</option>
+            <option value="inlaws">🙇‍♀️ 시댁 / 처가 어른 — 극도의 정중함과 쿠션어 (High-stress)</option>
+            <option value="freelance">🎨 프리랜서 / 외주 — 단호함과 계약적/법적 방어선</option>
+            <option value="blind_date">🥂 소개팅 / 애프터 — 부담스럽지 않은 호감 표현과 티키타카</option>
             <option value="school">🎒 학교 친구 — 편안하고 공감하는 톤</option>
-            <option value="romantic">💕 연인 / 썸 — 감정 교감 및 뉘앙스 포착</option>
+            <option value="romantic">💕 연인 — 감정 교감 및 뉘앙스 포착</option>
             <option value="parent">👨‍👩‍👧 부모님 — 따뜻한 안부 및 감사 표현</option>
             <option value="sibling">👫 형제자매 — 간결하고 실용적인 캐주얼</option>
             <option value="friend" selected>☕ 친한 친구 — 메신저 코드(ㅋㅋ, ㅠㅠ)</option>
@@ -377,6 +395,10 @@
             <span>📩 상대방의 최근 메시지 (맥락)</span>
             <button class="input-action-btn" onclick="pasteClipboard('custom-last-msg')">📋 클립보드 붙여넣기</button>
           </label>
+          <div id="chat-history-indicator" style="display:none; background:rgba(78,224,203,0.1); border:1px solid rgba(78,224,203,0.3); border-radius:8px; padding:6px 10px; margin-bottom:8px; font-size:11px; color:var(--text-dim); align-items:center; justify-content:space-between;">
+            <span>💬 이전 대화 맥락 <b id="chat-history-count" style="color:var(--accent-2);">0턴</b> 누적됨</span>
+            <button class="input-action-btn" style="color:var(--bad);" onclick="clearChatHistory()">초기화</button>
+          </div>
           <textarea id="custom-last-msg" placeholder="상대방이 보낸 메시지를 붙여넣으세요. (예: '이거 언제까지 가능해?', '주말에 시간 돼?', 'ㅋㅋ 괜찮아')"></textarea>
         </div>
 
@@ -426,13 +448,16 @@
           <select id="vision-relation">
             <option value="auto">🤖 이미지에서 AI가 자동 감지</option>
             <option value="boss">👔 직장 상사 / 팀장</option>
-            <option value="romantic">💕 썸 / 소개팅 / 연인</option>
             <option value="client">💼 거래처 / 클라이언트</option>
-            <option value="colleague">☕ 직장 동료</option>
-            <option value="friend">🤝 친구 / 지인</option>
-            <option value="senior">🎓 선배</option>
-            <option value="junior">🌱 후배</option>
+            <option value="freelance">🎨 프리랜서 / 외주</option>
+            <option value="inlaws">🙇‍♀️ 시댁 / 처가 어른</option>
             <option value="professor">📚 교수님</option>
+            <option value="senior">🎓 선배</option>
+            <option value="colleague">☕ 직장 동료</option>
+            <option value="junior">🌱 후배</option>
+            <option value="blind_date">🥂 소개팅 / 애프터</option>
+            <option value="romantic">💕 연인</option>
+            <option value="friend">🤝 친구 / 지인</option>
             <option value="parent">👨‍👩‍👧 부모님 / 가족</option>
           </select>
         </div>
@@ -811,6 +836,15 @@ const PRESET_SCENARIOS = {
   }
 };
 
+const KOREAN_RELATION_RULES = {
+  inlaws: "🙇‍♀️ [시댁/처가 어른]: 오해의 소지를 원천 차단하는 극도의 정중함 필수. 쿠션어('아버님/어머님 혹시 바쁘지 않으시면~', '다름이 아니라~')를 적극 사용. 단답형 절대 금지, 다정하고 싹싹한 톤 유지.",
+  freelance: "🎨 [프리랜서/외주 클라이언트]: 감정 노동을 배제한 철저한 비즈니스 톤. 무리한 요구나 범위 초과에 대해서는 정중하지만 단호하게 선을 긋고, 계약적/법적 방어선을 구축하는 합쇼체 위주 사용.",
+  blind_date: "🥂 [소개팅/썸]: 너무 무겁지도, 너무 가볍지도 않은 텐션. 부담스럽지 않은 선에서 호감을 표현하고, 질문으로 티키타카를 유도. 과도한 이모티콘 자제, 센스 있는 해요체 사용.",
+  boss: "👔 [직장 상사/팀장]: 결론부터 보고하는 두괄식 필수. 수동적이지 않게 대안이나 데드라인을 먼저 제시. 깍듯한 합쇼체 적용.",
+  client: "💼 [클라이언트/거래처]: 철저한 비즈니스 격식. 완곡한 표현(완충어)과 함께 협력적 태도를 보여주되, 책임 소재가 불분명한 확답은 피할 것.",
+  friend: "☕ [친한 친구]: 가식 없는 찐친 모드. 한국 2030 특유의 밈, 초성(ㅋㅋ, ㅎㅎ), 팩트폭력, 혹은 따뜻한 위로 등 맥락에 맞게 유연하게. 띄어쓰기 파괴나 줄임말 허용."
+};
+
 const state = {
   currentRelation: 'friend',
   lastMsg: '',
@@ -821,7 +855,8 @@ const state = {
   totalCalls: 0,
   totalCostKRW: 0,
   cacheHits: 0,
-  cacheMisses: 0
+  cacheMisses: 0,
+  chatHistory: [] // Array of { side: 'other' | 'me', text: string }
 };
 
 // Profile & Recursive Self-Improvement Engine v6.0
@@ -1304,6 +1339,7 @@ async function handleGenerateVision() {
   toast('⚡ Gemini 3.8 Flash Vision이 캡처 화면을 시각 판독 중...');
   try {
     const promptCtx = ProfileStore.getPromptContext(rel === 'auto' ? 'friend' : rel);
+    const relationRule = rel !== 'auto' ? (KOREAN_RELATION_RULES[rel] || '') : '';
     const systemPrompt = `너는 세계 최고 수준의 고맥락 한국어 메신저 분석기 "WsIr Vision Engine"이다.
 제공된 카카오톡/메신저 스크린샷 이미지를 시각적으로 정밀 판독하라.
 판독 기준:
@@ -1330,7 +1366,7 @@ async function handleGenerateVision() {
     { "tier": "wow", "tone": "전략 (와우 포인트)", "text": "상대방의 숨은 결핍을 선제 해소하며 대화의 주도권을 쥐는 허를 찌르는 전략적 답장", "rationale": "왜 감탄을 자아내는지", "wow_detail": "사회심리학적 분석" }
   ]
 }
-${promptCtx}`;
+${relationRule ? `[특화 관계 지침]: ${relationRule}\n` : ''}${promptCtx}`;
 
     const userPrompt = `스크린샷 이미지를 정밀 분석하여 상대방의 마지막 메시지에 대한 최적의 답장 3안과 ⚡ Wow Point를 생성하라.
 사용자 지정 관계: ${rel}
@@ -1521,6 +1557,7 @@ async function executePipeline(relation, lastMsg, contextText) {
   // Real Google Gemini LLM Pipeline (BYOK)
   toast('⚡ Google Gemini 실시간 심층 분석 중...');
   const promptCtx = ProfileStore.getPromptContext(relation);
+  const relationRule = KOREAN_RELATION_RULES[relation] || '';
 
   const systemPrompt = `너는 고맥락 한국어 메신저 분석 및 답장 코-파일럿 "WsIr Engine"이다.
 상대방 메시지와 대화 맥락, 관계 특성을 심층 분석하여 오직 유효한 JSON 형식으로만 응답하라.
@@ -1568,6 +1605,7 @@ async function executePipeline(relation, lastMsg, contextText) {
 1. 마크다운(\`\`\`json) 기호 없이 순수 JSON 문자열만 출력할 것.
 2. 모든 답장은 한국 2030 메신저 구어체(카카오톡/슬랙) 현실감 100%를 반영할 것.
 3. 관계(${relation})의 위계와 격식도를 완벽히 준수할 것.
+${relationRule ? `4. [특화 관계 지침]: ${relationRule}` : ''}
 ${promptCtx}`;
 
   const userPrompt = `[대화 관계]: ${relation}
@@ -1671,6 +1709,13 @@ function renderResults(res, cost, isCached) {
             <div class="text">${escapeHtml(c.text)}</div>
             ${c.rationale ? `<div class="why"><b>💡</b> ${escapeHtml(c.rationale)}</div>` : ''}
             ${c.wow_detail ? `<div class="why" style="margin-top:6px;color:var(--wow);"><b>⚡ Insight:</b> ${escapeHtml(c.wow_detail)}</div>` : ''}
+            <div class="quick-tones" style="margin-top:12px; display:flex; gap:6px; overflow-x:auto; padding-bottom:4px;">
+              <button class="qt-btn" onclick="event.stopPropagation(); quickRegenerate(${i}, '더 정중하게')">✨ 더 정중하게</button>
+              <button class="qt-btn" onclick="event.stopPropagation(); quickRegenerate(${i}, '더 단호하게')">🛡️ 더 단호하게</button>
+              <button class="qt-btn" onclick="event.stopPropagation(); quickRegenerate(${i}, 'MZ 스타일로')">😎 MZ 스타일로</button>
+              <button class="qt-btn" onclick="event.stopPropagation(); quickRegenerate(${i}, '다정하게')">💕 다정하게</button>
+              <button class="qt-btn" style="background:rgba(78,224,203,0.2);color:var(--accent-2);border-color:rgba(78,224,203,0.4);" onclick="event.stopPropagation(); continueConversation(${i})">💬 대화 이어가기</button>
+            </div>
           </div>
         `;
       }).join('')}
@@ -1696,19 +1741,87 @@ function shareSummary() {
     toast('클립보드 권한이 필요합니다.');
   });
 }
+async function quickRegenerate(idx, toneAction) {
+  if (!state.lastResult || !state.lastResult.candidates[idx]) return;
+  const originalCand = state.lastResult.candidates[idx];
+  const origText = originalCand.text;
+  
+  toast(`✨ '${toneAction}' 톤으로 재작성 중...`);
+  
+  const systemPrompt = `당신은 한국어 메신저 대화 코치입니다.
+원본 답장의 의미와 맥락을 유지하면서, 사용자의 요구사항('${toneAction}')에 맞게 어조(Tone & Manner)만 수정하세요.
+반드시 아래 JSON 포맷으로만 응답하세요. 마크다운 기호 없이 순수 JSON만 출력하세요.
+{
+  "text": "수정된 답장 내용 (이모티콘이나 문장 부호 포함 가능)",
+  "rationale": "어조를 어떻게 변경했는지 핵심만 1줄 설명"
+}`;
+  const userPrompt = `[원본 답장]: "${origText}"\n[어조 수정 요구사항]: ${toneAction}`;
+  
+  try {
+    const res = await callGemini(systemPrompt, userPrompt);
+    const combined = res.content;
+    const parsed = typeof combined === 'object' ? combined : (typeof combined === 'string' ? JSON.parse(combined) : {text: origText});
+    
+    originalCand.text = parsed.text || origText;
+    originalCand.rationale = parsed.rationale || `(${toneAction} 반영됨)`;
+    originalCand.tone = (originalCand.tone || '').includes('->') ? originalCand.tone : `${originalCand.tone} -> ${toneAction}`;
+    
+    renderResults(state.lastResult, res.costKRW, false);
+    saveStats();
+    toast(`✨ 톤 앤 매너 조절 완료!`);
+  } catch(e) {
+    console.error(e);
+    handlePipelineError(e);
+  }
+}
 
 // User Action Handlers
+function clearChatHistory() {
+  state.chatHistory = [];
+  document.getElementById('chat-history-indicator').style.display = 'none';
+  document.getElementById('chat-history-count').textContent = '0턴';
+  toast('🧹 대화 맥락이 초기화되었습니다.');
+}
+
+function continueConversation(idx) {
+  if (!state.lastResult || !state.lastResult.candidates[idx]) return;
+  const cand = state.lastResult.candidates[idx];
+  
+  if (state.lastMsg) {
+    state.chatHistory.push({ side: 'other', text: state.lastMsg });
+  }
+  state.chatHistory.push({ side: 'me', text: cand.text });
+  
+  document.getElementById('chat-history-indicator').style.display = 'flex';
+  document.getElementById('chat-history-count').textContent = `${Math.floor(state.chatHistory.length / 2)}턴`;
+  
+  const ta = document.getElementById('custom-last-msg');
+  ta.value = '';
+  ta.placeholder = '상대방의 다음 메시지를 입력하세요...';
+  
+  setMode('custom');
+  ta.focus();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  
+  toast('💬 대화가 누적되었습니다. 상대방의 다음 반응을 입력하세요.');
+}
+
 async function handleGenerateCustom() {
   const lastMsg = document.getElementById('custom-last-msg').value.trim();
   if (!lastMsg) { toast('⚠️ 상대방 메시지를 입력해주세요!'); return; }
   const rel = document.getElementById('custom-relation').value;
   const intent = document.getElementById('custom-my-intent').value.trim();
-  const context = intent ? `사용자 희망 의도: ${intent}` : '자유 대화';
+  let contextText = intent ? `사용자 희망 의도: ${intent}` : '자유 대화';
+  if (state.chatHistory && state.chatHistory.length > 0) {
+    const historyStr = state.chatHistory.map(c => `${c.side==='me'?'[나]':'[상대방]'}: ${c.text}`).join('\n');
+    contextText = `[이전 대화 맥락]\n${historyStr}\n\n` + contextText;
+  }
+  
   state.currentRelation = rel;
   state.lastMsg = lastMsg;
   document.getElementById('custom-gen-btn').disabled = true;
   try {
-    await executePipeline(rel, lastMsg, context);
+    await executePipeline(rel, lastMsg, contextText);
   } catch(e) {
     handlePipelineError(e);
   } finally {
@@ -1836,10 +1949,11 @@ function renderProfile() {
   document.getElementById('dna-feedback-val').textContent = `👍 ${ov.totalThumbsUp || 0} / 👎 ${ov.totalThumbsDown || 0}`;
   document.getElementById('dna-edits-val').textContent = `수정 학습 ${ov.totalEdits || 0}회 / 복사 ${ov.totalCopies || 0}회`;
 
-  const rels = ['boss', 'client', 'senior', 'colleague', 'junior', 'professor', 'school', 'romantic', 'parent', 'sibling', 'friend'];
+  const rels = ['boss', 'client', 'senior', 'colleague', 'junior', 'professor', 'inlaws', 'freelance', 'blind_date', 'school', 'romantic', 'parent', 'sibling', 'friend'];
   const labels = {
     boss:'상사', client:'클라이언트', senior:'선배', colleague:'동료', junior:'후배',
-    professor:'교수님', school:'학교친구', romantic:'연인', parent:'부모님', sibling:'형제자매', friend:'친구'
+    professor:'교수님', inlaws:'시댁/처가', freelance:'프리랜서/외주', blind_date:'소개팅/썸',
+    school:'학교친구', romantic:'연인', parent:'부모님', sibling:'형제자매', friend:'친구'
   };
 
   let html = '';
