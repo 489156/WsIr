@@ -1,240 +1,151 @@
 # 나 뭐라고 보낼까? (WsIr) 💬
-> **"AI가 답장의 톤까지 골라준다"**  
-> 고맥락 한국어 메신저 환경을 위한 맞춤형 AI 커뮤니케이션 코-파일럿 (Communication Co-Pilot)
+> **"한국어 고맥락 메신저를 위한 초개인화 AI 커뮤니케이션 코-파일럿"**  
+> 텍스트와 카카오톡 캡처 화면 이면의 심리와 서브텍스트를 해독하고, 상황과 위계에 딱 맞는 최적의 답장을 추천합니다.
 
-[![Prototype Live](https://img.shields.io/badge/Prototype-Engine%20v5%20Live-FF7A59?style=for-the-badge&logo=googlechrome&logoColor=white)](https://tpwkujhv18eih.space.minimax.io/)
+[![Engine Status](https://img.shields.io/badge/Engine-v7.0%20Latest-4EE0CB?style=for-the-badge&logo=flutter&logoColor=white)]()
+[![LLM Architecture](https://img.shields.io/badge/LLM-Google%20Gemini%203.8%20Flash-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
 [![GitHub Repo](https://img.shields.io/badge/GitHub-WsIr%20Repository-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/489156/WsIr)
-[![LLM Architecture](https://img.shields.io/badge/LLM-Google%20Gemini%203.8%20Flash%20(Interactions%20API)-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
 [![License](https://img.shields.io/badge/License-Proprietary-yellow?style=for-the-badge)]()
 
 ---
 
-## Executive Summary (핵심 요약)
+## 📌 Executive Summary (프로젝트 현황)
 
-**'나 뭐라고 보낼까? (WsIr)'**는 카카오톡, 슬랙, 문자 메시지 등 일상과 업무 메신저 대화에서 발생하는 감정 소모, 의사소통 오해, 답장 스트레스를 해결하기 위해 기획된 **지능형 메신저 답장 추천 및 관계 코칭 서비스**입니다.
+**'나 뭐라고 보낼까? (WsIr)'**는 카카오톡, 슬랙 등 일상과 직장에서 오가는 고맥락(High-context) 한국어 메신저 대화의 감정 소모와 답장 스트레스를 해결하기 위해 구축된 **AI 메신저 코파일럿 서비스**입니다.
 
-단순히 뻔한 문장을 기계적으로 생성하는 기존 AI 챗봇과 달리:
-1. **상대방 메시지의 이면(의도, 감정, 서브텍스트, 숨겨진 니즈)**을 정밀 해독합니다.
-2. **한국 특유의 11개 사회적 관계 위계(상사, 선배, 클라이언트, 연인 등)**에 최적화된 3가지 톤(격식/캐주얼/따뜻) 후보를 즉시 생성합니다.
-3. 상대방의 기대를 뛰어넘는 전략적 통찰을 담은 **⚡ Wow Point 답장 1개**를 제공합니다.
-4. 사용자 편집 피드백을 실시간 수집하는 **LCS diff 기반 재귀 자기개선 엔진**을 통해, 쓸수록 사용자 고유의 어조와 선호 스타일로 진화합니다.
-5. **Google Gemini 3.8 Flash 공식 연동(Thinking 추론 내장)과 24시간 캐싱**을 통해 고성능을 유지하면서 1일 1,500회 **완전 무료(Free Tier)** 및 유료 전환 시에도 **세션당 ₩1.8원**으로 극상의 유닛 이코노믹스를 달성했습니다.
+현재 저장소에는 다음 3가지 핵심 모듈이 온전히 구비되어 즉시 실행 및 배포가 가능합니다:
+1. **웹 프로토타입 (`index.html`)**: 설치 없이 브라우저에서 즉시 체험 가능한 독립형 고기능 SPA (Zero-Retention & BYOK 지원).
+2. **모바일 크로스 플랫폼 앱 (`wsir_app/`)**: Flutter 기반으로 구축된 MVVM + Repository 아키텍처의 정규 모바일 앱 (iOS / Android).
+3. **보안 프록시 서버 (`wsir_proxy/`)**: Google GenAI 공식 SDK 및 Gemini 3.8 Flash 기반으로 API Key를 안전하게 격리하고 프롬프트를 중앙 제어하는 Node.js 백엔드.
 
 ---
 
-## 1. 프로젝트 기획 의도 및 배경 (Background & Intent)
-
-### 1.1 해결하고자 하는 문제 (Problem Statement)
-* **한국어의 고맥락(High-Context) 문화**: 한국어 메신저 대화는 텍스트 그대로의 의미보다 문맥, 이모티콘(ㅋㅋ, ㅠㅠ), 문장 부호(~, .), 호칭, 답장 간격에 따라 완전히 다른 의미를 가집니다.
-  * 예: *"ㅋㅋ 괜찮아"* → 표면적 용서 vs 내면의 서운함
-  * 예: *"확인해보겠습니다"* → 업무 검토 vs 완곡한 회피/거절
-* **세분화된 사회적 관계와 경어체 피로도**: 격식체(합쇼체), 친근한 존댓말(해요체), 반말(해체) 등 상대방의 나이, 직급, 친밀도에 따라 잘못된 톤 하나가 관계를 위태롭게 만듭니다.
-* **범용 AI의 한계**: ChatGPT 등 기존 범용 LLM은 장황하고 어색한 번역투 문장을 출력하며, 메신저 대화에 즉시 복사해 붙여넣을 수 있는 '1~2줄 압축 한국어 메신저 문체'를 구현하지 못합니다.
-* **프라이버시 우려**: 민감한 사생활이나 비즈니스 대화 내용이 서버 데이터베이스에 무단 저장되거나 유출되는 것에 대한 거부감이 큽니다.
-
-### 1.2 서비스의 핵심 목표 (Mission & Solution)
-* **1초 의사결정**: 상대방 메시지 캡처/입력 즉시 4개 답장 후보와 전략 가이드를 제공하여 고민 시간을 5분에서 10초 이내로 단축.
-* **관계의 질적 개선 (Communication Coaching)**: 단순 도구를 넘어 상대의 심리와 욕구를 짚어주는 미묘한 심리학적 통찰(Layered Brain Science) 제공.
-* **프라이버시 최우선 (Zero Data Retention)**: API Key와 대화 원문은 사용자 기기(로컬)에만 머무르는 BYOK(Bring Your Own Key) 아키텍처 지향.
-
----
-
-## 2. 핵심 차별화 요소 (Core Differentiators)
+## ⚡ 핵심 기능 및 고맥락 대응 차별점 (Core Features)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│                        나 뭐라고 보낼까? 5대 핵심 가치                  │
+│                        WsIr 6대 핵심 기술적 차별점                       │
 ├─────────────────────┬──────────────────────────────────────────────────┤
-│ ⚡ Wow Point         │ 사용자가 미처 생각지 못한 한 수 앞선 전략적 통찰답장│
+│ ⚡ Wow Point         │ 상대방의 결핍을 선제 해소하는 허를 찌르는 전략 답장  │
 ├─────────────────────┼──────────────────────────────────────────────────┤
-│ 👥 11개 관계 카테고리│ 상사/동료/선배/후배/교수/클라이언트/연인/친구 등 특화│
+│ 👥 한국형 14대 관계  │ 시댁/처가, 외주/프리랜서, 소개팅/썸, 상사 등 위계 반영│
 ├─────────────────────┼──────────────────────────────────────────────────┤
-│ 🧠 재귀 자기개선     │ 사용자 수정본 diff 분석 → 내 말투로 자동 프로파일링  │
+│ 🎨 원클릭 톤 조절기   │ 더 정중하게 / 단호하게 / MZ 스타일 / 다정하게 실시간 재작성 │
 ├─────────────────────┼──────────────────────────────────────────────────┤
-│ 💸 Multi-Model 라우팅│ Gemini 3.8 Flash + 캐싱 → ₩0(Free) ~ ₩1.8/세션│
+│ 💬 연속 대화 (Multi) │ '대화 이어가기' 버튼으로 티키타카 문맥 100% 누적 반영 │
 ├─────────────────────┼──────────────────────────────────────────────────┤
-│ 🔒 철저한 프라이버시 │ 대화 원문 서버 비저장 + BYOK 로컬 암호화 저장         │
+│ 📸 비전 스크린샷 판독 │ 말풍선 배치, 답장 시간차(텀), 카톡 '1' 유무 종합 분석  │
+├─────────────────────┼──────────────────────────────────────────────────┤
+│ 🔒 Zero-Retention   │ 인메모리 처리 후 즉시 폐기, 대화 원문 서버 비저장     │
 └─────────────────────┴──────────────────────────────────────────────────┘
 ```
 
-### 1) ⚡ Wow Point: "사용자가 절대 생각하지 못한 각도"
-기존 답장 추천기는 "네 알겠습니다"나 "시간 괜찮아요"처럼 누구나 생각할 수 있는 평범한 답변을 제시합니다. 반면 **Wow Point**는 상대의 숨겨진 불안이나 욕구를 먼저 배려하면서 주도권을 잃지 않는 통찰을 담습니다.
-* **상황 (상사 압박)**: *"이거 언제까지 가능해? 클라이언트에서 빨리 답변 달라고 하는데"*
-  * ❌ *일반 답변*: "내일 오전까지 하겠습니다."
-  * ⚡ *Wow Point*: **"오늘 밤 11시까지 핵심 초안 먼저 넘겨드리고, 내일 오전 클라이언트 출근 전 피드백 반영해 최종본 올리겠습니다. 가장 급한 항목부터 말씀해 주시면 우선순위 두고 먼저 잡겠습니다."** (일정 확답 + 주도적 해결책 + 팀장 안심 유도)
+### 1) ⚡ Wow Point: "상대방의 숨은 결핍을 선제 해소하는 전략"
+단순히 "네 알겠습니다" 식의 수동적인 답변을 넘어, 상대방의 진짜 심리(불안, 시간 압박, 인정 욕구)를 꿰뚫어 주도권을 쥐는 1개의 전략적 답장을 제공합니다.
+* **상황**: *"이거 언제까지 가능해? 클라이언트에서 빨리 달라고 하네"*
+* ❌ *일반 답장*: "내일 오전까지 하겠습니다."
+* ⚡ *Wow Point*: **"오늘 밤 11시까지 핵심 초안 먼저 넘겨드리고, 내일 오전 클라이언트 출근 전 피드백 반영해 최종본 올리겠습니다. 가장 급한 항목부터 말씀해 주시면 우선순위 두고 먼저 잡겠습니다."**
 
-### 2) 한국형 11대 관계 카테고리 (Speech Levels & Nuance)
-| 대분류 | 카테고리 | 호칭 및 권장 톤 | 핵심 전략 |
-|---|---|---|---|
-| **직장 / 비즈니스** | 상사 (`boss`) | 팀장님, 과장님 등 / 합쇼체 | 결론 우선, 기한 명시, 완충 표현 사용 |
-| | 선배 (`senior`) | 선배님 / 부드러운 존댓말 | 존중과 친근함의 균형, 감사의 표시 |
-| | 동료 (`colleague`) | 님 / 해요체 | 상호 존중, 명확한 협업 요청 |
-| | 후배 (`junior`) | 이름 / 멘토링 톤 | 정중한 배려, 심리적 안정감 제공 |
-| | 클라이언트 (`client`) | 고객사 직함 / 비즈니스 격식 | 신뢰성 확보, 모호성 배제, 신속한 확인 |
-| **학업 / 공적** | 교수님 (`professor`) | 교수님 / 최고 수준 합쇼체 | 예의, 학술적 명확성, 일정 확인 |
-| | 학교 친구 (`school`) | 너, 이름 / 반말·해요체 | 편안함, 공감 표현 |
-| **사적 / 가족** | 연인 (`romantic`) | 애칭, 너 / 다정·배려 톤 | 감정 교감, 뉘앙스 포착, 선제적 제안 |
-| | 부모님 (`parent`) | 엄마, 아빠 / 따뜻한 존댓말 | 안부 확인, 그리움 충족, 감사 표현 |
-| | 형제자매 (`sibling`) | 형, 누나, 너 / 직설적 캐주얼 | 간결성, 실용성 |
-| | 친구 (`friend`) | 야, 너 / 한국 메신저 코드(ㅋㅋ, ㅠㅠ) | 유대감 확인, 서운함 해소 |
+### 2) 👥 한국형 14대 관계 프리셋 (Speech Levels & Nuance Rules)
+상대방과의 관계에 따라 시스템 프롬프트에 `KOREAN_RELATION_RULES`가 동적으로 주입됩니다:
+* 🙇‍♀️ **시댁 / 처가 어른 (`inlaws`)**: 오해 소지를 원천 차단하는 극도의 정중함과 쿠션어(`"아버님 바쁘지 않으시면~"`) 필수 적용.
+* 🎨 **프리랜서 / 외주 클라이언트 (`freelance`)**: 감정 노동을 배제한 철저한 비즈니스 톤 및 계약적·법적 방어선 구축.
+* 🥂 **소개팅 / 썸 (`blind_date`)**: 부담스럽지 않은 선의 호감 표현과 티키타카를 유도하는 세련된 해요체.
+* 👔 **직장 상사 (`boss`)**: 결론부터 보고하는 두괄식 보고와 깍듯한 합쇼체.
+* ☕ **친한 친구 (`friend`)**: 메신저 코드(ㅋㅋ, ㅠㅠ), 초성, 적절한 팩트폭력과 공감.
+* *그 외 선배, 동료, 후배, 교수님, 연인, 부모님, 형제자매 등 총 14개 관계 완벽 지원.*
 
-### 3) LCS Diff 기반 재귀 학습 (Recursive Learning Engine)
-사용자가 AI 추천 문구를 그대로 복사하지 않고 인라인 모달에서 편집할 경우, **최장 공통 부분 수열(LCS, Longest Common Subsequence)** 알고리즘을 구동합니다.
-* 사용자가 추가한 표현(`diff.added`)과 삭제한 표현(`diff.removed`)을 2~8자 단위로 토큰화.
-* 문체 격식도 이동량(`computeFormalityShift`)과 길이 편향(`computeLengthShift`)을 산출.
-* **시간 가중 감쇄 모델(Decay 0.85)**을 적용하여 최신 수정 성향을 관계별 프로필에 반영:
-  $$\text{Bias}_{\text{new}} = \text{Bias}_{\text{old}} \times 0.85 + \text{Shift} \times 0.15$$
-* 3회 이상 피드백이 쌓인 관계는 다음 추천 시 프롬프트 주입(Few-shot Context Injection)을 통해 "진짜 나다운 어투"를 자동 합성.
+### 3) 🎨 원클릭 퀵 톤 조절기 (Quick Tone Modifiers)
+추천된 답장이 마음에 들지만 약간의 뉘앙스를 바꾸고 싶을 때, 단 한 번의 클릭으로 즉시 어조를 재작성합니다:
+* `[✨ 더 정중하게]` : 완충어 및 극존칭 추가
+* `[🛡️ 더 단호하게]` : 완곡한 거절 및 경계선 명확화
+* `[😎 MZ 스타일로]` : 힙하고 자연스러운 메신저 줄임말/구어체 적용
+* `[💕 다정하게]` : 이모지와 따뜻한 공감 표현 극대화
 
----
+### 4) 💬 연속 대화 지원 (Multi-turn Context)
+단발성 추천을 넘어, 사용자가 마음에 드는 답장을 선택하면 **`[💬 대화 이어가기]`**를 통해 누적 대화 기록(Turn)으로 보존됩니다. 상대방의 다음 반응이 오면 이전 티키타카 문맥을 프롬프트에 자동 주입하여 끊김 없는 대화 흐름을 유지합니다.
 
-## 3. Multi-Model Routing & 비용 최적화 (Architecture)
+### 5) 📸 비전 스크린샷 판독 (Vision Engine)
+텍스트를 복사해 올 필요 없이 카카오톡 캡처 이미지를 업로드하면:
+* 노란색/우측(나) vs 흰색/좌측(상대방) 말풍선 분리
+* 메시지 간 전송 시간 간격(Latency: 5분 vs 8시간)에 따른 심리 분석
+* 읽음 표시(카카오톡 숫자 1 유무) 기반 서브텍스트 해독
 
-### 3.1 처리 파이프라인
-단일 대형 모델(GPT-4o)을 전면 적용하면 세션당 약 ₩183의 비용이 발생하여 B2C 서비스로서 유닛 이코노믹스가 성립하지 않습니다. **WsIr Engine v5**는 작업을 역할별로 분할하여 최적 모델로 라우팅합니다.
-
-```mermaid
-flowchart TD
-    User([사용자 메시지 입력 / 시나리오 선택]) --> CacheCheck{24h 로컬 캐시 확인}
-    
-    CacheCheck -- 적중 (Hit) --> InstantReturn[⚡ 즉시 응답 반환\n0 토큰 / 0원]
-    
-    CacheCheck -- 미스 (Miss) --> Layer1[Layer 1: 의도/감정/서브텍스트 분석\nGPT-4o-mini]
-    
-    Layer1 --> Layer2[Layer 2: 기본 후보 3개 생성\n격식 / 캐주얼 / 따뜻\nGPT-4o-mini]
-    
-    Layer2 --> Layer3[Layer 3: ⚡ Wow Point 1개 생성\n전략적 통찰 / 심층 추론\nGPT-4o]
-    
-    Layer3 --> Layer4[Layer 4: 후보 정렬 & 결과 캐싱\nLocalStorage / Redis]
-    
-    Layer4 --> OutputUI([UI 표시: 4개 답장 + 비용/분석 대시보드])
-```
-
-### 3.2 비용 및 손익분기 (Cost Breakdown & Unit Economics)
-
-| 항목 | 전면 GPT-4o (구 v4) | Multi-Model Routing (현 v5) | 절감 효과 |
-|---|---|---|---|
-| **Layer 1 (의도 분석)** | GPT-4o (~$0.015) | **GPT-4o-mini (~$0.0006)** | -96% |
-| **Layer 2 (초안 3개)** | GPT-4o (~$0.045) | **GPT-4o-mini (~$0.0011)** | -97% |
-| **Layer 3 (Wow Point)**| GPT-4o (~$0.075) | **GPT-4o (~$0.0066)** | 핵심만 집중 |
-| **24h 캐싱 적중 시** | $0 | **$0** | 즉시 응답 |
-| **세션당 실측 비용** | **약 ₩183 ($0.137)** | **약 ₩11 ($0.0083)** | **94% 절감** |
-| **Plus 구독자 BEP** | 약 36,000명 필요 | **약 7,186명 달성 시 손익분기** | 현실적 사업성 확보 |
+### 6) 🧠 LCS Diff 기반 온디바이스 재귀 학습 (Self-Improvement)
+추천 답장을 사용자가 직접 편집할 경우 최장 공통 부분 수열(LCS) 알고리즘으로 수정 성향(+추가/-삭제 단어, 격식도 이동량)을 계산하여 브라우저 로컬 프로필에 학습시키며, 쓸수록 내 말투를 닮아가도록 진화합니다.
 
 ---
 
-## 4. 라이브 프로토타입 (Engine v5 Live Prototype)
+## 🏗️ 시스템 아키텍처 및 저장소 구성 (Architecture & Structure)
 
-* **배포 URL**: [https://tpwkujhv18eih.space.minimax.io/](https://tpwkujhv18eih.space.minimax.io/)
-* **상태**: Production-ready 웹 프로토타입 (MiniMax Agent 배포 환경)
+WsIr 저장소는 웹, 모바일, 백엔드가 모듈별로 명확히 분리된 구조를 갖추고 있습니다:
 
-### 4.1 프로토타입 주요 검증 기능
-1. **BYOK 셋업 스크린**: 브라우저 로컬 저장소 기반 암호화 보관, 서버를 거치지 않는 투명한 키 관리.
-2. **5대 실전 시나리오 제공**:
-   * 💕 *연인 · 주말 약속*: `"주말에 시간 돼?"` — 모호한 질문에 대한 적극적 데이트 제안
-   * 👔 *상사 · 보고서 마감*: `"이거 언제까지 가능해?"` — 마감 압박을 역이용하는 전략적 리포팅
-   * 🤝 *친구 · 서운한 화해*: `"ㅋㅋ 괜찮아"` — 서운함을 털어내고 기분 상하지 않게 푸는 법
-   * 👨‍👩‍👧 *가족 · 엄마 안부*: `"잘 지내지? 전화 한번 해줘"` — 부모님의 외로움을 덜어주는 따뜻한 답장
-   * 💼 *클라이언트 · 미묘한 불만*: `"확인해보겠습니다"` — 지연·거절 신호를 방어하는 프로페셔널 대응
-3. **Multi-Model 실시간 상태 추적기**: 캐시 확인 → Mini 의도 분석 → Mini 초안 3개 → 4o Wow Point 순차 파이프라인 시각화.
-4. **실시간 비용/캐시 트래커**: 세션별 실시간 비용(₩), 누적 호출 수, 캐시 적중률(%) 실시간 카운팅.
-5. **인라인 에디터 & Diff 시각화**: 메시지 수정 시 변경된 단어(+추가 / -삭제)를 시각적으로 하이라이트하고 즉시 프로필에 피드백.
-6. **학습 프로필 대시보드**: 관계별 격식도 지수, 표본 수, 학습된 선호 표현 목록 모니터링.
-
----
-
-## 5. Subtle Layered 커뮤니케이션 코칭 프레임워크
-
-사용자에게 부담을 주지 않으면서 심리학/커뮤니케이션 과학적 가치를 단계적으로 전달하는 **Layered Approach**를 채택했습니다.
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│ [Layer 1] 무료 사용자 (기본 도구)                                       │
-│  · 답장 후보 4개 추천 (기본 3개 + Wow Point 1개)                        │
-│  · 서브텍스트 1줄 요약 ("상대방이 진짜 원하는 것")                     │
-│  · 절대 쓰면 안 되는 회피 표현(Red Flags) 경고                         │
-└────────────────────────────────────────────────────────────────────────┘
-                                 ↓ (Plus 구독 시 전환: 월 ₩4,900)
-┌────────────────────────────────────────────────────────────────────────┐
-│ [Layer 2] Plus 구독자 (심화 관계 코칭)                                  │
-│  · 심층 분석 패널 (의도, 감정, 상대방의 결핍 욕구, 추천 커뮤니케이션 전략) │
-│  · 발신자-수신자 톤 불일치(Mismatch) 알림                              │
-│  · 시간대별 톤 가이드 (출근 시간대, 퇴근 직후, 심야 시간대)             │
-│  · 개인화 학습 데이터 시각화 (내가 자주 쓰는 표현 및 어조 변화 추이)    │
-└────────────────────────────────────────────────────────────────────────┘
-                                 ↓ (Pro / B2B 팀 플랜: 월 ₩14,900)
-┌────────────────────────────────────────────────────────────────────────┐
-│ [Layer 3] Pro & B2B (커뮤니케이션 이론 기반)                            │
-│  · 사회심리학 이론 기반 수신자 톤 시뮬레이션 ("상대방이 이 글을 읽었을 때")│
-│    (Erving Goffman의 체면 유지 이론, Brown & Levinson의 공손성 전략)   │
-│  · B2B 기업 맞춤형 톤앤매너 가이드라인 준수율 점검                      │
-│  · 조직 및 고객 응대 이력 분석 대시보드                                │
-└────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 6. 기술 스택 및 시스템 명세 (Tech Stack)
-
-### 6.1 프론트엔드 (Mobile Client)
-* **Framework**: React Native (iOS 17+, Android 10+)
-* **Styling**: NativeWind (Tailwind CSS for React Native)
-* **Navigation**: React Navigation v6
-* **State Management**: Zustand
-* **Storage**:
-  * 일반 설정/프로필/캐시: AsyncStorage
-  * 민감 키(API Key): iOS Keychain / Android EncryptedSharedPreferences
-
-### 6.2 백엔드 (Minimal Sync & IAP API)
-* **Runtime**: Node.js + Fastify + TypeScript (I/O 병목 최소화)
-* **Database**: PostgreSQL (Supabase Free Tier / Cloudflare D1 호환)
-* **Session Cache**: Redis (Upstash)
-* **결제 인프라**: StoreKit 2 (iOS) / Google Play Billing (Android) / 토스페이 (웹 폴백)
-* **원칙**: 백엔드는 결제 검증, 프로필 동기화(선택적), 익명 통계만 처리하며 **대화 원문과 API Key는 절대 서버에 저장하지 않음**.
-
-### 6.3 AI & LLM 엔진
-* **Main Models**:
-  * `gpt-4o-mini`: 고속 문맥 파싱, 3-Tier 초안 생성, 품질 점수화
-  * `gpt-4o`: 고차원 전략적 추론, Wow Point 생성
-* **Fallback / Multi-Vendor**: Claude 3.5 Sonnet 및 Gemini 1.5 Pro 추상화 인터페이스 구비
-
----
-
-## 7. 사업 로드맵 (Milestones & Roadmap)
-
-```
-2026 Q1-Q2             2026 Q3                 2026 Q4                 2027 Q1
-[Phase 0: Foundation] → [Phase 1: Closed Beta] → [Phase 2: Public MVP]   → [Phase 3: Integration]
-· Fastify 백엔드 셋업   · 테스터 100명 검증     · 스토어 정식 출시      · 안드로이드 오버레이
-· React Native 셸 구축  · 실사용 1,000건 축적   · Plus 인앱 결제 (₩4,900)· iOS 키보드 확장
-· Multi-Model 라우팅    · D1 리텐션 ≥ 50%       · MAU 3,000 달성        · MAU 50,000 / B2B 런칭
-```
-
-* **Phase 0 — Foundation (M0 ~ M1)**: 백엔드 API 부트스트랩, React Native 셸 셋업, Engine v5 핵심 파이프라인 모바일 포팅.
-* **Phase 1 — Closed Beta (M2 ~ M3)**: 100명 클로즈드 베타, 실사용 피드백 1,000건 수집, 세션당 비용 ₩15 이하 고정.
-* **Phase 2 — Public MVP (M4 ~ M6)**: App Store / Google Play 공식 출시, Plus 구독(₩4,900/월) 런칭, MAU 3,000 / 결제 전환 3%.
-* **Phase 3 — Messenger Integration (M7 ~ M9)**: 카카오톡 앱 위에서 바로 작동하는 Android 접근성 오버레이 및 iOS 키보드 익스텐션 배포, MAU 15,000 돌파.
-* **Phase 4 — Intelligence Layer & Global (M10 ~ M12)**: 수신자 반응 예측, 일본 LINE 시장 진출, B2B 조직 커뮤니케이션 코칭 솔루션 확장.
-
----
-
-## 8. 저장소 문서 구성 (Repository Structure)
-
-```
+```text
 WsIr/
-├── README.md                     # 본 문서 (프로젝트 개요, 비전, 아키텍처 및 종합 가이드)
-├── MASTER_PLAN v1 (1).1          # 사업/제품/엔지니어링 마스터 플랜 v1.1 (Foundational Blueprint)
-└── VIBE_CODING_BLUEPRINT (1).md  # AI 코딩 에이전트용 구현 명세서 (Dense prompt spec for RN build)
+├── index.html                   # [Web] 완전 독립형 웹 프로토타입 SPA (체험 및 BYOK)
+├── wsir_app/                    # [Mobile] Flutter 기반 크로스 플랫폼 앱 (iOS / Android)
+│   ├── lib/
+│   │   ├── domain/models/       # Freezed 기반 불변 도메인 모델 (AnalysisResult)
+│   │   ├── data/
+│   │   │   ├── services/        # HTTP 프록시 통신 클라이언트 (GeminiProxyService)
+│   │   │   └── repositories/    # 단일 진실 공급원 저장소 (ChatRepository)
+│   │   ├── ui/features/chat/
+│   │   │   └── view_models/     # 상태 관리 ViewModel (ChatViewModel - MVVM)
+│   │   └── main.dart            # Flutter 앱 진입점 및 Material 3 UI / ImagePicker
+│   └── pubspec.yaml             # Flutter 종속성 설정
+├── wsir_proxy/                  # [Backend] Node.js Express 보안 프록시 서버
+│   ├── index.js                 # Gemini 3.8 Flash SDK 호출, 스키마 검증, 프롬프트 중앙 관리
+│   ├── .env.example             # 프록시 환경변수 템플릿 (API 키 격리)
+│   └── package.json             # Express, @google/genai, cors 등 의존성
+├── PROJECT_IDENTITY_AND_STRATEGY.md # 제품 정체성 및 시장 전략 문서
+├── MASTER_PLAN v1 (1).1         # 비즈니스 및 엔지니어링 마스터 플랜
+└── README.md                    # 본 프로젝트 종합 안내 문서
 ```
-
-* **[MASTER_PLAN v1 (1).1](./MASTER_PLAN%20v1%20(1).1)**: 창업자 비전, As-Is 자산 평가, 단계별 예산/팀 빌딩, KPI 대시보드, 리스크 매트릭스를 다룬 총괄 전략서입니다.
-* **[VIBE_CODING_BLUEPRINT (1).md](./VIBE_CODING_BLUEPRINT%20(1).md)**: Minimax, Claude Code, Antigravity 등 AI 에이전트가 React Native 앱을 직접 빌드할 수 있도록 작성된 엄격한 머신 프롬프트 명세서입니다.
 
 ---
 
-## 9. 기여 및 개발 참여 (Contribution & License)
+## 💸 유닛 이코노믹스 및 LLM 파이프라인
 
-본 프로젝트는 고품질 한국어 AI 커뮤니케이션 서비스 개발을 목표로 진행 중인 독점(Proprietary) 프로젝트입니다.
-기여나 협업 문의는 저장소의 Issue 또는 PR을 통해 등록해 주시기 바랍니다.
+* **메인 모델**: **Google Gemini 3.8 Flash** (Google AI Studio 최신 권장 모델)
+* **API Key 보안**: 클라이언트 앱 내부에 API 키를 포함하지 않고 `wsir_proxy` 서버에서 `.env`로 은닉 관리.
+* **무료 티어 (Free Tier) 지원**: Google AI Studio 무료 티어(결제수단 미등록 키) 적용 시 **실제 청구 금액 ₩0 (완전 무료)**로 구동.
+* **초저지연 응답**: Thinking 추론 파라미터 최적화로 평균 1.5~2.5초 내에 4개 후보 및 심층 분석 JSON 반환.
+
+---
+
+## 🚀 로컬 실행 가이드 (Quick Start)
+
+### 1. 웹 프로토타입 실행 (`index.html`)
+별도의 서버 구동 없이 웹 브라우저에서 바로 열 수 있습니다.
+* `WsIr/index.html` 파일을 더블 클릭하여 크롬/사파리 등의 브라우저에서 실행.
+* [체험 모드]로 시뮬레이션 데이터를 즉시 확인하거나, 우측 상단 톱니바퀴에서 Gemini API Key를 입력하여 실시간 동작 가능.
+
+### 2. 백엔드 프록시 서버 실행 (`wsir_proxy/`)
+```bash
+cd wsir_proxy
+npm install
+# .env 파일 생성 후 발급받은 Gemini API 키 입력:
+# GEMINI_API_KEY=your_gemini_api_key_here
+npm start
+# http://localhost:3000 에서 서버 구동 (/health 로 상태 확인 가능)
+```
+
+### 3. 모바일 앱 실행 (`wsir_app/`)
+```bash
+cd wsir_app
+flutter pub get
+flutter run
+# 에뮬레이터 또는 연결된 기기에서 MVVM 기반 WsIr 모바일 앱 실행
+```
+
+---
+
+## 🛡️ 개인정보 보호 정책 (Zero-Retention Privacy)
+
+본 서비스는 사용자의 사적인 대화와 캡처 화면을 최우선으로 보호합니다:
+* **비저장 원칙**: 업로드된 이미지 및 대화 원문은 LLM 추론을 위한 인메모리(In-Memory) 버퍼에서만 처리되며, 분석 즉시 메모리에서 영구 폐기됩니다.
+* **데이터 학습 금지**: 사용자 대화 로그를 AI 모델 학습용으로 저장하거나 제3자에게 제공하지 않습니다.
+
+---
 
 * **저작권**: © 2026 "나 뭐라고 보낼까? (WsIr)" All Rights Reserved.
