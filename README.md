@@ -2,9 +2,9 @@
 > **"한국어 고맥락 메신저를 위한 초개인화 AI 커뮤니케이션 코-파일럿"**  
 > 텍스트와 카카오톡 캡처 화면 이면의 심리와 서브텍스트를 해독하고, 상황과 위계에 딱 맞는 최적의 답장을 추천합니다.
 
-[![Engine Status](https://img.shields.io/badge/Engine-v7.0%20Latest-4EE0CB?style=for-the-badge&logo=flutter&logoColor=white)]()
-[![LLM Architecture](https://img.shields.io/badge/LLM-Google%20Gemini%203.8%20Flash-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
+[![Prototype Live](https://img.shields.io/badge/Prototype-Engine%20v7.0%20Live-4EE0CB?style=for-the-badge&logo=googlechrome&logoColor=white)](https://489156.github.io/WsIr/)
 [![GitHub Repo](https://img.shields.io/badge/GitHub-WsIr%20Repository-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/489156/WsIr)
+[![LLM Architecture](https://img.shields.io/badge/LLM-Google%20Gemini%203.8%20Flash-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
 [![License](https://img.shields.io/badge/License-Proprietary-yellow?style=for-the-badge)]()
 
 ---
@@ -15,6 +15,7 @@
 
 현재 저장소에는 다음 3가지 핵심 모듈이 온전히 구비되어 즉시 실행 및 배포가 가능합니다:
 1. **웹 프로토타입 (`index.html`)**: 설치 없이 브라우저에서 즉시 체험 가능한 독립형 고기능 SPA (Zero-Retention & BYOK 지원).
+   * 🌐 **라이브 바로가기**: [https://489156.github.io/WsIr/](https://489156.github.io/WsIr/)
 2. **모바일 크로스 플랫폼 앱 (`wsir_app/`)**: Flutter 기반으로 구축된 MVVM + Repository 아키텍처의 정규 모바일 앱 (iOS / Android).
 3. **보안 프록시 서버 (`wsir_proxy/`)**: Google GenAI 공식 SDK 및 Gemini 3.8 Flash 기반으로 API Key를 안전하게 격리하고 프롬프트를 중앙 제어하는 Node.js 백엔드.
 
@@ -116,8 +117,8 @@ WsIr/
 ## 🚀 로컬 실행 가이드 (Quick Start)
 
 ### 1. 웹 프로토타입 실행 (`index.html`)
-별도의 서버 구동 없이 웹 브라우저에서 바로 열 수 있습니다.
-* `WsIr/index.html` 파일을 더블 클릭하여 크롬/사파리 등의 브라우저에서 실행.
+* 🌐 **온라인 즉시 접속**: [https://489156.github.io/WsIr/](https://489156.github.io/WsIr/) 링크를 클릭하면 별도 설치 없이 모바일/PC 브라우저에서 최신 v7.0 엔진을 바로 체험할 수 있습니다.
+* 💻 **로컬 오프라인 실행**: 별도의 서버 구동 없이 `WsIr/index.html` 파일을 더블 클릭하여 크롬/사파리 등의 브라우저에서 실행.
 * [체험 모드]로 시뮬레이션 데이터를 즉시 확인하거나, 우측 상단 톱니바퀴에서 Gemini API Key를 입력하여 실시간 동작 가능.
 
 ### 2. 백엔드 프록시 서버 실행 (`wsir_proxy/`)
