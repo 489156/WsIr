@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>나 뭐라고 보낼까? (WsIr) — AI 커뮤니케이션 코-파일럿 (Engine v6.0 Recursive & Vision)</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -2042,6 +2043,38 @@ async function quickRegenerate(idx, toneAction) {
   
   toast(`✨ '${toneAction}' 톤으로 재작성 중...`);
   
+  const hasKey = !!localStorage.getItem(KEY_STORAGE);
+  if (!hasKey) {
+    // Demo Mode Tone Adjustment Simulation
+    await new Promise(r => setTimeout(r, 300));
+    let newText = origText;
+    let rationale = `(${toneAction} 톤 시뮬레이션 반영)`;
+    if (toneAction.includes('정중')) {
+      newText = origText.replace(/고마워|미안해|잘 전달할게요|줄게요/g, m => ({'고마워':'정말 감사드립니다', '미안해':'죄송스러운 마음이 큽니다', '잘 전달할게요':'소중히 잘 전달해 드리겠습니다', '줄게요':'드리겠습니다'}[m] || m));
+      if (!newText.includes('감사드립니다') && !newText.includes('감사합니다')) newText += ' 진심으로 깊이 감사드립니다.';
+      rationale = '격식과 정중함을 극대화한 최고 수준의 예의 어조로 보정';
+    } else if (toneAction.includes('단호')) {
+      newText = origText.replace(/ㅠㅠ|~|!/g, '').replace(/\.\./g, '.');
+      if (newText.length > 60) newText = newText.slice(0, 60) + '... 감사히 마음만 받겠습니다.';
+      rationale = '불필요한 감정 표현을 배제하고 핵심 의사를 단호하고 분명하게 전달';
+    } else if (toneAction.includes('MZ')) {
+      newText = origText.replace(/감사합니다/g, '감사해용ㅎㅎ').replace(/대접하겠습니다/g, '쏠게용!! ㅋㅋㅋ');
+      if (!newText.includes('ㅋㅋ')) newText += ' 센스 완전 최고세요 ㅋㅋㅋ';
+      rationale = '2030 메신저 구어체 감성의 친근하고 센스 있는 표현으로 변환';
+    } else if (toneAction.includes('다정')) {
+      newText = `따뜻한 마음에 감동받았어요 🥺 ` + origText;
+      rationale = '상대방의 정성에 공감하며 온기를 극대화한 다정한 표현';
+    }
+    originalCand.text = newText;
+    originalCand.rationale = rationale;
+    originalCand.tone = (originalCand.tone || '').includes('->') ? originalCand.tone : `${originalCand.tone} -> ${toneAction}`;
+    
+    renderResults(state.lastResult, 0, false);
+    saveStats();
+    toast(`✨ [체험 모드] ${toneAction} 톤 조절 완료!`);
+    return;
+  }
+
   const systemPrompt = `당신은 한국어 메신저 대화 코치입니다.
 원본 답장의 의미와 맥락을 유지하면서, 사용자의 요구사항('${toneAction}')에 맞게 어조(Tone & Manner)만 수정하세요.
 반드시 아래 JSON 포맷으로만 응답하세요. 마크다운 기호 없이 순수 JSON만 출력하세요.
